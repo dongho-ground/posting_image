@@ -7,6 +7,7 @@ import * as path from 'path';
 const SPREADSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1FdAi652-z0_EZMXOrN0tNZWAcpdpN4CdVIxvWdSG8SQ/export?format=csv&gid=0';
 const NAVER_ID = process.env.NAVER_ID || 'wonrexander';
 const NAVER_PW = process.env.NAVER_PW || 'iamwon84^^!@';
+const NAVER_COOKIES_JSON = process.env.NAVER_COOKIES || '';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1598288296';
 
@@ -35,7 +36,6 @@ async function fetchSpreadsheetData() {
 
 function getTodayKSTString() {
   const now = new Date();
-  // KST is UTC+9
   const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
   return kst.toISOString().split('T')[0];
 }
@@ -51,29 +51,22 @@ async function run() {
     return;
   }
 
-  // Row 0 is header
   let targetRow = null;
-  let targetIdx = -1;
-
-  // 1. First priority: row matching today and Ready
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    const postDate = r[6]?.trim(); // Column G (Index 6)
-    const status = r[7]?.trim();   // Column H (Index 7)
+    const postDate = r[6]?.trim();
+    const status = r[7]?.trim();
     if (postDate === today && status === 'Ready') {
       targetRow = r;
-      targetIdx = i;
       break;
     }
   }
 
-  // 2. Fallback: first Ready post
   if (!targetRow) {
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
       if (r[7]?.trim() === 'Ready') {
         targetRow = r;
-        targetIdx = i;
         break;
       }
     }
@@ -105,17 +98,14 @@ async function run() {
   const cta = targetRow[28];
   const img1Name = targetRow[29];
   const img2Name = targetRow[30];
-  const hashtags = targetRow[33] || '#공인회계사 #원동호회계사';
 
   console.log(`[*] Target Post Selected: [${postId}] ${title}`);
 
-  // Resolve Image Paths
   const img1Path = path.resolve('images', img1Name);
   const img2Path = path.resolve('images', img2Name);
   console.log(`[*] Image 1: ${img1Path} (Exists: ${fs.existsSync(img1Path)})`);
   console.log(`[*] Image 2: ${img2Path} (Exists: ${fs.existsSync(img2Path)})`);
 
-  // Launch Playwright
   console.log('[*] Launching Chromium in GitHub Actions Cloud Runner...');
   const browser = await chromium.launch({
     headless: true,
@@ -128,32 +118,51 @@ async function run() {
     locale: 'ko-KR'
   });
 
+  // Inject cookies if available
+  if (NAVER_COOKIES_JSON) {
+    try {
+      const cookies = JSON.parse(NAVER_COOKIES_JSON);
+      await context.addCookies(cookies);
+      console.log(`[*] Injected ${cookies.length} Naver session cookies!`);
+    } catch (e) {
+      console.log('[!] Failed to parse NAVER_COOKIES:', e.message);
+    }
+  }
+
   const page = await context.newPage();
 
   try {
-    // 1. Naver Login
-    console.log('[*] Navigating to Naver Login...');
-    await page.goto('https://nid.naver.com/nidlogin.login');
-    await page.waitForTimeout(2000);
+    // 1. Verify Login State
+    console.log('[*] Navigating to Naver Blog main page to verify login...');
+    await page.goto('https://blog.naver.com');
+    await page.waitForTimeout(3000);
 
-    // Evaluate JS login paste to bypass basic bot keyboard checks
-    await page.evaluate(({ id, pw }) => {
-      document.querySelector('#id').value = id;
-      document.querySelector('#pw').value = pw;
-    }, { id: NAVER_ID, pw: NAVER_PW });
+    const isLoginNeeded = await page.$('a:has-text("로그인"), .link_login');
+    if (isLoginNeeded && !NAVER_COOKIES_JSON) {
+      console.log('[*] Performing Form Login on nid.naver.com...');
+      await page.goto('https://nid.naver.com/nidlogin.login');
+      await page.waitForTimeout(2000);
 
-    await page.waitForTimeout(1000);
-    await page.click('#log\\.login');
-    await page.waitForTimeout(4000);
+      await page.evaluate(({ id, pw }) => {
+        const idInput = document.querySelector('#id') || document.querySelector('input[name="id"]');
+        const pwInput = document.querySelector('#pw') || document.querySelector('input[name="pw"]');
+        if (idInput) idInput.value = id;
+        if (pwInput) pwInput.value = pw;
+      }, { id: NAVER_ID, pw: NAVER_PW });
 
-    console.log(`[*] Logged in. Current URL: ${page.url()}`);
+      await page.waitForTimeout(1000);
+      const submitBtn = await page.$('.btn_login, #log\\.login, button[type="submit"], input[type="submit"]');
+      if (submitBtn) {
+        await submitBtn.click();
+        await page.waitForTimeout(5000);
+      }
+    }
 
     // 2. Open SmartEditor ONE
-    console.log('[*] Navigating to SmartEditor ONE writing page...');
+    console.log(`[*] Navigating to SmartEditor ONE for ${NAVER_ID}...`);
     await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`);
     await page.waitForTimeout(7000);
 
-    // Handle SmartEditor iframe or direct canvas
     let frame = page;
     const mainFrameEl = await page.$('#mainFrame');
     if (mainFrameEl) {
@@ -170,7 +179,7 @@ async function run() {
       }
     } catch (e) {}
 
-    // 3. Enter Title (나눔명조 Bold)
+    // 3. Enter Title
     console.log('[*] Entering Title...');
     const titleArea = await frame.$('.se-documentTitle, .se-section-documentTitle, [contenteditable="true"]');
     if (titleArea) {
@@ -240,11 +249,10 @@ async function run() {
       await publishBtn.click();
       await page.waitForTimeout(2000);
 
-      // Confirm publish modal button
       const confirmBtn = await frame.$('.confirm_btn, button:has-text("발행하기")');
       if (confirmBtn) {
         await confirmBtn.click();
-        await page.waitForTimeout(5000);
+        await page.waitForTimeout(6000);
       }
     }
 

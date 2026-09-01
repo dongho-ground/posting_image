@@ -1,12 +1,9 @@
 ﻿name: 24/7 Naver Blog Cloud Auto Publisher
 
 on:
-  # 1. Scheduled trigger: Monday to Friday at 13:00 KST (04:00 UTC)
   schedule:
     - cron: '0 4 * * 1-5'
-  # 2. Manual trigger from GitHub UI
   workflow_dispatch:
-  # 3. Remote webhook trigger from n8n
   repository_dispatch:
     types: [naver_post]
 
@@ -36,6 +33,7 @@ jobs:
         env:
           NAVER_ID: ${{ secrets.NAVER_ID || 'wonrexander' }}
           NAVER_PW: ${{ secrets.NAVER_PW || 'iamwon84^^!@' }}
+          NAVER_COOKIES: ${{ secrets.NAVER_COOKIES }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto' }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1598288296' }}
         run: |
