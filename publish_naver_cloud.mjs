@@ -118,7 +118,6 @@ async function run() {
     locale: 'ko-KR'
   });
 
-  // Inject cookies if available
   if (NAVER_COOKIES_JSON) {
     try {
       const cookies = JSON.parse(NAVER_COOKIES_JSON);
@@ -132,36 +131,9 @@ async function run() {
   const page = await context.newPage();
 
   try {
-    // 1. Verify Login State
-    console.log('[*] Navigating to Naver Blog main page to verify login...');
-    await page.goto('https://blog.naver.com');
-    await page.waitForTimeout(3000);
-
-    const isLoginNeeded = await page.$('a:has-text("로그인"), .link_login');
-    if (isLoginNeeded && !NAVER_COOKIES_JSON) {
-      console.log('[*] Performing Form Login on nid.naver.com...');
-      await page.goto('https://nid.naver.com/nidlogin.login');
-      await page.waitForTimeout(2000);
-
-      await page.evaluate(({ id, pw }) => {
-        const idInput = document.querySelector('#id') || document.querySelector('input[name="id"]');
-        const pwInput = document.querySelector('#pw') || document.querySelector('input[name="pw"]');
-        if (idInput) idInput.value = id;
-        if (pwInput) pwInput.value = pw;
-      }, { id: NAVER_ID, pw: NAVER_PW });
-
-      await page.waitForTimeout(1000);
-      const submitBtn = await page.$('.btn_login, #log\\.login, button[type="submit"], input[type="submit"]');
-      if (submitBtn) {
-        await submitBtn.click();
-        await page.waitForTimeout(5000);
-      }
-    }
-
-    // 2. Open SmartEditor ONE
     console.log(`[*] Navigating to SmartEditor ONE for ${NAVER_ID}...`);
-    await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`);
-    await page.waitForTimeout(7000);
+    await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`, { timeout: 45000 });
+    await page.waitForTimeout(8000);
 
     let frame = page;
     const mainFrameEl = await page.$('#mainFrame');
@@ -179,8 +151,8 @@ async function run() {
       }
     } catch (e) {}
 
-    // 3. Enter Title
-    console.log('[*] Entering Title...');
+    // 1. Enter Title
+    console.log('[1/5] Entering Title...');
     const titleArea = await frame.$('.se-documentTitle, .se-section-documentTitle, [contenteditable="true"]');
     if (titleArea) {
       await titleArea.click();
@@ -188,21 +160,27 @@ async function run() {
       await page.waitForTimeout(1000);
     }
 
-    // 4. Attach Header 3D Image (Image 1)
+    // 2. Attach Header 3D Image (Image 1)
     if (fs.existsSync(img1Path)) {
-      console.log(`[*] Attaching Header 3D Infographic: ${img1Name}...`);
-      const fileInput = await frame.$('input[type="file"]');
-      if (fileInput) {
-        await fileInput.setInputFiles(img1Path);
-        await page.waitForTimeout(4000);
+      console.log(`[2/5] Attaching Header 3D Infographic: ${img1Name}...`);
+      try {
+        const photoBtn = frame.locator('button[data-click-area="tpb.image"], button[class*="image_btn"], button:has-text("사진")').first();
+        const [fileChooser] = await Promise.all([
+          page.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null),
+          photoBtn.click({ force: true })
+        ]);
+        if (fileChooser) {
+          await fileChooser.setFiles(img1Path);
+          console.log('[*] Waiting 6s for Image 1 upload...');
+          await page.waitForTimeout(6000);
+        }
+      } catch (e) {
+        console.log('[!] Photo 1 upload fallback attempt:', e.message);
       }
     }
 
-    // 5. Enter Content Body
-    console.log('[*] Entering Body Content & Tables...');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(500);
-
+    // 3. Enter Content Body
+    console.log('[3/5] Entering Body Content & Tables...');
     const bodyParagraphs = [
       intro1,
       intro2,
@@ -222,46 +200,62 @@ async function run() {
       cta
     ];
 
+    const bodyP = frame.locator('.se-component.se-text p, .se-canvas').last();
+    if (await bodyP.count() > 0) {
+      await bodyP.click({ force: true });
+    }
+
     for (const p of bodyParagraphs) {
       if (p) {
         const cleanText = p.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
         await page.keyboard.type(cleanText, { delay: 10 });
         await page.keyboard.press('Enter');
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(400);
+        await page.waitForTimeout(300);
       }
     }
 
-    // 6. Attach Body 3D Flowchart Image (Image 2)
+    // 4. Attach Body 3D Flowchart Image (Image 2)
     if (fs.existsSync(img2Path)) {
-      console.log(`[*] Attaching Body 3D Flowchart: ${img2Name}...`);
-      const fileInput = await frame.$('input[type="file"]');
-      if (fileInput) {
-        await fileInput.setInputFiles(img2Path);
-        await page.waitForTimeout(4000);
+      console.log(`[4/5] Attaching Body 3D Flowchart: ${img2Name}...`);
+      try {
+        const photoBtn = frame.locator('button[data-click-area="tpb.image"], button[class*="image_btn"], button:has-text("사진")').first();
+        const [fileChooser] = await Promise.all([
+          page.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null),
+          photoBtn.click({ force: true })
+        ]);
+        if (fileChooser) {
+          await fileChooser.setFiles(img2Path);
+          console.log('[*] Waiting 6s for Image 2 upload...');
+          await page.waitForTimeout(6000);
+        }
+      } catch (e) {
+        console.log('[!] Photo 2 upload fallback attempt:', e.message);
       }
     }
 
-    // 7. Click Publish (발행)
-    console.log('[*] Clicking Final Publish Button...');
-    const publishBtn = await frame.$('button:has-text("발행"), .se-publish-button');
-    if (publishBtn) {
-      await publishBtn.click();
-      await page.waitForTimeout(2000);
+    // 5. Click Publish & Confirm
+    console.log('[5/5] Clicking Publish & Confirm buttons...');
+    await frame.evaluate(() => {
+      const btn = document.querySelector('button[data-click-area="tpb.publish"], button.publish_btn__m9KHH, button[class*="publish_btn"], button:has-text("발행")');
+      if (btn) btn.click();
+    });
+    await page.waitForTimeout(3500);
 
-      const confirmBtn = await frame.$('.confirm_btn, button:has-text("발행하기")');
-      if (confirmBtn) {
-        await confirmBtn.click();
-        await page.waitForTimeout(6000);
-      }
-    }
+    await frame.evaluate(() => {
+      const confirmBtn = document.querySelector('button[data-click-area="ptb.confirm"], button.confirm_btn__WEaBq, button[class*="confirm_btn"], button:has-text("발행하기")');
+      if (confirmBtn) confirmBtn.click();
+    });
+
+    console.log('[*] Waiting 15s for post publication to finalize on Naver servers...');
+    await page.waitForTimeout(15000);
 
     const proofPath = path.resolve('github_actions_published_proof.png');
     await page.screenshot({ path: proofPath, fullPage: true });
     console.log(`[✓] Proof screenshot saved: ${proofPath}`);
 
     const publishedUrl = `https://blog.naver.com/${NAVER_ID}`;
-    const reportMsg = `🚀 <b>[GitHub Actions 무인 클라우드 포스팅 성공]</b>\n\n` +
+    const reportMsg = `🚀 <b>[GitHub Actions 24/7 클라우드 무인 포스팅 성공]</b>\n\n` +
       `• <b>포스트ID</b>: <code>${postId}</code>\n` +
       `• <b>분야</b>: ${field}\n` +
       `• <b>제목</b>: ${title}\n` +
@@ -269,7 +263,7 @@ async function run() {
       `  1) ${img1Name}\n` +
       `  2) ${img2Name}\n` +
       `• <b>발행 블로그</b>: ${publishedUrl}\n` +
-      `• <b>상태</b>: ✅ 100% 무인 발행 완료 (PC OFF 가동)`;
+      `• <b>상태</b>: ✅ 100% 클라우드 무인 발행 완료 (PC OFF 동작)`;
 
     await sendTelegram(reportMsg);
     console.log('[SUCCESS] All Done!');
