@@ -129,11 +129,12 @@ async function run() {
   }
 
   const page = await context.newPage();
+  page.setDefaultTimeout(15000);
 
   try {
     console.log(`[*] Navigating to SmartEditor ONE for ${NAVER_ID}...`);
-    await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`, { timeout: 45000 });
-    await page.waitForTimeout(8000);
+    await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`, { timeout: 30000 });
+    await page.waitForTimeout(6000);
 
     let frame = page;
     const mainFrameEl = await page.$('#mainFrame');
@@ -156,26 +157,26 @@ async function run() {
     const titleArea = await frame.$('.se-documentTitle, .se-section-documentTitle, [contenteditable="true"]');
     if (titleArea) {
       await titleArea.click();
-      await page.keyboard.type(title, { delay: 30 });
-      await page.waitForTimeout(1000);
+      await page.keyboard.type(title, { delay: 10 });
+      await page.waitForTimeout(500);
     }
 
     // 2. Attach Header 3D Image (Image 1)
     if (fs.existsSync(img1Path)) {
       console.log(`[2/5] Attaching Header 3D Infographic: ${img1Name}...`);
-      try {
-        const photoBtn = frame.locator('button[data-click-area="tpb.image"], button[class*="image_btn"], button:has-text("사진")').first();
-        const [fileChooser] = await Promise.all([
-          page.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null),
-          photoBtn.click({ force: true })
-        ]);
-        if (fileChooser) {
-          await fileChooser.setFiles(img1Path);
-          console.log('[*] Waiting 6s for Image 1 upload...');
-          await page.waitForTimeout(6000);
+      let fileInput = await frame.$('input[type="file"]');
+      if (!fileInput) {
+        const photoBtn = await frame.$('button[data-click-area="tpb.image"], button[class*="image_btn"], button:has-text("사진")');
+        if (photoBtn) {
+          await photoBtn.click().catch(() => {});
+          await page.waitForTimeout(1000);
+          fileInput = await frame.$('input[type="file"]');
         }
-      } catch (e) {
-        console.log('[!] Photo 1 upload fallback attempt:', e.message);
+      }
+      if (fileInput) {
+        await fileInput.setInputFiles(img1Path);
+        console.log('[*] Waiting 5s for Image 1 upload...');
+        await page.waitForTimeout(5000);
       }
     }
 
@@ -208,29 +209,29 @@ async function run() {
     for (const p of bodyParagraphs) {
       if (p) {
         const cleanText = p.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-        await page.keyboard.type(cleanText, { delay: 10 });
+        await page.keyboard.type(cleanText, { delay: 0 });
         await page.keyboard.press('Enter');
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(100);
       }
     }
 
     // 4. Attach Body 3D Flowchart Image (Image 2)
     if (fs.existsSync(img2Path)) {
       console.log(`[4/5] Attaching Body 3D Flowchart: ${img2Name}...`);
-      try {
-        const photoBtn = frame.locator('button[data-click-area="tpb.image"], button[class*="image_btn"], button:has-text("사진")').first();
-        const [fileChooser] = await Promise.all([
-          page.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null),
-          photoBtn.click({ force: true })
-        ]);
-        if (fileChooser) {
-          await fileChooser.setFiles(img2Path);
-          console.log('[*] Waiting 6s for Image 2 upload...');
-          await page.waitForTimeout(6000);
+      let fileInput = await frame.$('input[type="file"]');
+      if (!fileInput) {
+        const photoBtn = await frame.$('button[data-click-area="tpb.image"], button[class*="image_btn"], button:has-text("사진")');
+        if (photoBtn) {
+          await photoBtn.click().catch(() => {});
+          await page.waitForTimeout(1000);
+          fileInput = await frame.$('input[type="file"]');
         }
-      } catch (e) {
-        console.log('[!] Photo 2 upload fallback attempt:', e.message);
+      }
+      if (fileInput) {
+        await fileInput.setInputFiles(img2Path);
+        console.log('[*] Waiting 5s for Image 2 upload...');
+        await page.waitForTimeout(5000);
       }
     }
 
@@ -240,15 +241,15 @@ async function run() {
       const btn = document.querySelector('button[data-click-area="tpb.publish"], button.publish_btn__m9KHH, button[class*="publish_btn"], button:has-text("발행")');
       if (btn) btn.click();
     });
-    await page.waitForTimeout(3500);
+    await page.waitForTimeout(2500);
 
     await frame.evaluate(() => {
       const confirmBtn = document.querySelector('button[data-click-area="ptb.confirm"], button.confirm_btn__WEaBq, button[class*="confirm_btn"], button:has-text("발행하기")');
       if (confirmBtn) confirmBtn.click();
     });
 
-    console.log('[*] Waiting 15s for post publication to finalize on Naver servers...');
-    await page.waitForTimeout(15000);
+    console.log('[*] Waiting 8s for publication to finalize on Naver...');
+    await page.waitForTimeout(8000);
 
     const proofPath = path.resolve('github_actions_published_proof.png');
     await page.screenshot({ path: proofPath, fullPage: true });
