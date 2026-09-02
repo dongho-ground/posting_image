@@ -13,6 +13,18 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 const TARGET_POST_ID = process.env.TARGET_POST_ID?.trim() || '';
 const RESULT_PATH = path.resolve('publish_result.json');
 
+function parseNaverCookies(raw) {
+  // GitHub Secrets can accidentally contain line breaks or tabs inserted while
+  // copying a cookie value. Cookie JSON never needs control characters, so
+  // remove them before parsing instead of silently continuing unauthenticated.
+  const normalized = raw.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  const cookies = JSON.parse(normalized);
+  if (!Array.isArray(cookies) || cookies.length === 0) {
+    throw new Error('NAVER_COOKIES must be a non-empty JSON array');
+  }
+  return cookies;
+}
+
 function writeResult(result) {
   fs.writeFileSync(RESULT_PATH, JSON.stringify({
     ...result,
@@ -125,11 +137,12 @@ async function run() {
 
   if (NAVER_COOKIES_JSON) {
     try {
-      const cookies = JSON.parse(NAVER_COOKIES_JSON);
+      const cookies = parseNaverCookies(NAVER_COOKIES_JSON);
       await context.addCookies(cookies);
       console.log(`[*] Injected ${cookies.length} Naver session cookies!`);
     } catch (e) {
-      console.log('[!] Failed to parse NAVER_COOKIES:', e.message);
+      await browser.close();
+      throw new Error(`Failed to parse NAVER_COOKIES: ${e.message}`);
     }
   }
 
