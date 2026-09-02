@@ -77,6 +77,35 @@ async function run() {
 
   // Build Semantic HTML conforming to Tistory_posting_guide.md
   let htmlContent = '';
+  
+  // Base CSS for zero empty-ad blanks, smooth line-height, and clean Noto Sans KR typography
+  const baseStyle = `
+<style>
+  /* 미송출/빈 광고 슬롯 공백 원천 차단 */
+  ins.adsbygoogle[data-ad-status="unfilled"],
+  ins.adsbygoogle:empty,
+  ins.adsbygoogle[style*="height: 0px"],
+  .revenue_unit_wrap:empty,
+  [data-ad-curtain="placeholder"] {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  ins.adsbygoogle {
+    margin: 20px auto !important;
+    min-height: 0 !important;
+  }
+  .post-article {
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    color: #334155;
+    line-height: 1.85;
+    font-size: 16px;
+  }
+</style>
+`;
+
   if (TARGET_TAB === 'Account') {
     // B2B Client Acquisition Structure
     htmlContent = `
@@ -197,6 +226,7 @@ async function run() {
 </div>
 `;
   }
+  htmlContent = baseStyle + htmlContent;
 
   console.log('[*] Launching Real Headed Chromium with Virtual Display Xvfb...');
   const browser = await chromium.launch({
