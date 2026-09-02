@@ -4,7 +4,7 @@ import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SPREADSHEET_ID = '1FdAi652-z0_EZMXOrN0tNZWAcpdpN4CdVIxvWdSG8SQ';
+const SPREADSHEET_ID = '1TNs8J8Y6toJ_vCYE7pRTZUUSIyHLHFGgqqWiBH916RU';
 const TARGET_TAB = process.env.TISTORY_TAB || 'Account'; // 'Account' or 'adsens'
 const SPREADSHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${TARGET_TAB}`;
 
