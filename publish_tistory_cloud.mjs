@@ -160,18 +160,19 @@ async function run() {
   const cleanCta = cta.replace(/border-left:[^;]+;/gi, '');
   // Robust Public CDN Image Resolver
   function resolvePublicImageUrl(rawUrl, fallbackFilename) {
+    const ts = Date.now();
     if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
-      return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${fallbackFilename}`;
+      return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${fallbackFilename}?v=${ts}`;
     }
     let clean = rawUrl.trim();
     if (clean.includes('github.com') && clean.includes('/images/')) {
-      const filename = clean.split('/images/').pop();
-      return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${filename}`;
+      const cleanFile = clean.split('/images/').pop().trim().replace(/^['"]|['"]$/g, '');
+      return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${cleanFile}?v=${ts}`;
     }
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
-      return clean;
+      return clean.includes('?') ? `${clean}&v=${ts}` : `${clean}?v=${ts}`;
     }
-    return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${clean}`;
+    return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${clean}?v=${ts}`;
   }
 
   // Dynamic smart image detection across both Account and adsens tabs
