@@ -190,6 +190,12 @@ async function run() {
   const img1Url = resolvePublicImageUrl(rawImg1 || targetRow[31] || targetRow[29] || targetRow[27], defaultImg1);
   const img2Url = resolvePublicImageUrl(rawImg2 || targetRow[32] || targetRow[30] || targetRow[28], defaultImg2);
 
+  // Helper: Format bold keywords with rich accent color
+  function applyBoldColor(text) {
+    if (!text || typeof text !== 'string') return '';
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1d4ed8; font-weight: 700; background: #f0fdf4; padding: 2px 5px; border-radius: 4px; border-bottom: 2px solid #86efac;">$1</strong>');
+  }
+
   // Base CSS for zero empty-ad blanks, smooth line-height, and clean Noto Sans KR typography
   const baseStyle = `
 <style>
@@ -222,15 +228,25 @@ async function run() {
   let htmlContent = `
 <article class="post-article">
 
-  <!-- 1. 3줄 핵심 요약 박스 (자연스러운 에디토리얼 노트) -->
-  <div class="summary-box" style="margin: 2rem 0 2.5rem; padding: 24px 28px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; line-height: 1.9; color: #374151; font-size: 15.5px;">
-    ${intro1}
+  <!-- 1. 3줄 핵심 요약 카드 + 상단 핵심 요약 비교표 -->
+  <div class="summary-box" style="margin: 2rem 0 1.5rem; padding: 24px 28px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; line-height: 1.9; color: #334155; font-size: 15.5px;">
+    ${applyBoldColor(intro1)}
   </div>
+
+  <!-- 핵심 요약 한눈에 보기 비교표 (요약 필수 배치) -->
+  ${table1 ? `
+  <section style="margin: 1.5rem 0 2.5rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.8rem;">
+      📊 핵심 요약 한눈에 보기 (항목별 핵심 비교 분석)
+    </h3>
+    ${parsePipeTable(table1)}
+  </section>
+  ` : ''}
 
   <!-- 2. 도입부 상세 해설 (초보자 눈높이 현장 문제제기) -->
   <section style="margin: 2.2rem 0;">
     <p style="margin-bottom: 1.4rem; color: #334155; font-size: 1.05rem; line-height: 1.95;">
-      ${intro2}
+      ${applyBoldColor(intro2)}
     </p>
   </section>
 
@@ -238,7 +254,7 @@ async function run() {
   ${quote ? `
   <div class="quote-card" style="margin: 2.5rem 0; padding: 28px 32px; background: #fdfbf7; border: 1px solid #f2ede4; border-radius: 8px; color: #292524; font-size: 16px; line-height: 1.95;">
     <div style="font-size: 1.5rem; color: #d97706; margin-bottom: 8px; font-family: Georgia, serif; line-height: 1;">“</div>
-    <div style="font-style: italic; color: #334155; margin-bottom: 8px;">${quote}</div>
+    <div style="font-style: italic; color: #334155; margin-bottom: 8px;">${applyBoldColor(quote)}</div>
     <div style="font-size: 1.5rem; color: #d97706; text-align: right; font-family: Georgia, serif; line-height: 1;">”</div>
   </div>
   ` : ''}
@@ -254,44 +270,34 @@ async function run() {
       1. 왜 이 문제가 발생하며, 법적으로 무엇이 가장 위험할까요?
     </h2>
     <p style="margin-bottom: 1.2rem; color: #334155; line-height: 1.85;">
-      ${lawAnalysis}
+      ${applyBoldColor(lawAnalysis)}
     </p>
   </section>
 
-  <!-- 6. 핵심 요약 비교표 -->
-  ${table1 ? `
-  <section style="margin: 2.5rem 0;">
-    <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.8rem;">
-      📊 핵심 모델 및 방식별 비교 분석
-    </h3>
-    ${parsePipeTable(table1)}
-  </section>
-  ` : ''}
-
-  <!-- 7. 4대 실무 솔루션 상세 가이드 (서술형 심층 해설) -->
+  <!-- 6. 4대 실무 솔루션 상세 가이드 (서술형 심층 해설) -->
   <section style="margin: 3.5rem 0;">
     <h2 style="font-size: 1.4rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 0.7rem; margin-bottom: 2rem;">
       2. 실무에서 검증된 합법적 4대 핵심 해결 방안
     </h2>
 
     <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
-      ${sol1}
+      ${applyBoldColor(sol1)}
     </div>
 
     <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
-      ${sol2}
+      ${applyBoldColor(sol2)}
     </div>
 
     <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
-      ${sol3}
+      ${applyBoldColor(sol3)}
     </div>
 
     <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
-      ${sol4}
+      ${applyBoldColor(sol4)}
     </div>
   </section>
 
-  <!-- 8. 본문 플로우차트 이미지 -->
+  <!-- 7. 본문 플로우차트 이미지 -->
   <p style="text-align: center; margin: 2.5rem 0;">
     <img src="${img2Url}" referrerpolicy="no-referrer" alt="${title} 실무 프로세스 플로우차트" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);" />
   </p>
