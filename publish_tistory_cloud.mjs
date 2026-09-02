@@ -118,11 +118,11 @@ async function run() {
     return html;
   }
 
-  // Helper: Format FAQ Box
+  // Helper: Format FAQ Box (Natural human conversational card)
   function formatFaqBox(qnaText) {
     if (!qnaText || !qnaText.trim()) return '';
     return `
-<div style="margin: 1.2rem 0; padding: 1.25rem 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.8;">
+<div style="margin: 1.2rem 0; padding: 22px 26px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); line-height: 1.9; font-size: 15.5px;">
   ${qnaText}
 </div>
 `;
@@ -145,6 +145,7 @@ async function run() {
   const qna3 = targetRow[25] || '';
   const closing = targetRow[27] || '';
   const cta = targetRow[28] || '';
+  const cleanCta = cta.replace(/border-left:[^;]+;/gi, '');
   // Robust Public CDN Image Resolver
   function resolvePublicImageUrl(rawUrl, fallbackFilename) {
     if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
@@ -196,23 +197,25 @@ async function run() {
   let htmlContent = `
 <article class="post-article">
 
-  <!-- 1. 3줄 핵심 요약 박스 (차분한 에디토리얼 스타일) -->
-  <div class="summary-box" style="margin: 1.5rem 0 2rem; padding: 1.5rem 1.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #1e3a8a; border-radius: 6px; line-height: 1.85;">
+  <!-- 1. 3줄 핵심 요약 박스 (자연스러운 에디토리얼 노트) -->
+  <div class="summary-box" style="margin: 2rem 0 2.5rem; padding: 24px 28px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; line-height: 1.9; color: #374151; font-size: 15.5px;">
     ${intro1}
   </div>
 
   <!-- 2. 도입부 상세 해설 (초보자 눈높이 현장 문제제기) -->
-  <section style="margin: 2rem 0;">
-    <p style="margin-bottom: 1.2rem; color: #334155; font-size: 1.05rem; line-height: 1.85;">
+  <section style="margin: 2.2rem 0;">
+    <p style="margin-bottom: 1.4rem; color: #334155; font-size: 1.05rem; line-height: 1.95;">
       ${intro2}
     </p>
   </section>
 
-  <!-- 3. 실제 상담 사례 인용구 박스 -->
+  <!-- 3. 실제 상담 사례 인용구 (자연스러운 인터뷰 대화록) -->
   ${quote ? `
-  <blockquote style="margin: 2rem 0; padding: 1.25rem 1.5rem; background: #f1f5f9; border-left: 4px solid #64748b; border-radius: 4px; font-style: italic; color: #1e293b; line-height: 1.8;">
-    ${quote}
-  </blockquote>
+  <div class="quote-card" style="margin: 2.5rem 0; padding: 28px 32px; background: #fdfbf7; border: 1px solid #f2ede4; border-radius: 8px; color: #292524; font-size: 16px; line-height: 1.95;">
+    <div style="font-size: 1.5rem; color: #d97706; margin-bottom: 8px; font-family: Georgia, serif; line-height: 1;">“</div>
+    <div style="font-style: italic; color: #334155; margin-bottom: 8px;">${quote}</div>
+    <div style="font-size: 1.5rem; color: #d97706; text-align: right; font-family: Georgia, serif; line-height: 1;">”</div>
+  </div>
   ` : ''}
 
   <!-- 4. 대표 3D 인포그래픽 이미지 -->
@@ -305,9 +308,9 @@ async function run() {
     </p>
   </section>
 
-  <!-- 13. 1:1 맞춤 자문 안내 CTA 카드 -->
-  <section class="post-cta" style="margin: 3.5rem 0 2rem; padding: 2rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); line-height: 1.85;">
-    ${cta}
+  <!-- 13. 1:1 맞춤 자문 안내 CTA 카드 (자연스러운 4면 일관 카드) -->
+  <section class="post-cta" style="margin: 3.5rem 0 2rem; padding: 28px 30px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.02); line-height: 1.9;">
+    ${cleanCta}
   </section>
 
 </article>
