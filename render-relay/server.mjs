@@ -6,6 +6,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 const RELAY_KEY = process.env.RELAY_KEY || '';
 const REPO_OWNER = process.env.REPO_OWNER || 'dongho-ground';
 const REPO_NAME = process.env.REPO_NAME || 'posting_image';
+const NAVER_WORKFLOW = 'naver_only_publish.yml';
 
 function json(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
@@ -49,7 +50,12 @@ async function github(path, options = {}) {
 const server = http.createServer(async (req, res) => {
   try {
     if (req.method === 'GET' && req.url === '/health') {
-      return json(res, 200, { ok: true, service: 'naver-publishing-relay' });
+      return json(res, 200, {
+        ok: true,
+        service: 'naver-publishing-relay',
+        workflow: NAVER_WORKFLOW,
+        platform: 'naver-only'
+      });
     }
     if (!authorized(req)) return json(res, 401, { ok: false, error: 'Unauthorized' });
     if (!GITHUB_TOKEN) return json(res, 503, { ok: false, error: 'GITHUB_TOKEN is not configured' });
@@ -58,26 +64,25 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const postId = String(body.post_id || '').trim();
       if (!postId) return json(res, 400, { ok: false, error: 'post_id is required' });
-      await github('/dispatches', {
+      await github(`/actions/workflows/${NAVER_WORKFLOW}/dispatches`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          event_type: 'naver_post',
-          client_payload: {
-            post_id: postId,
-            source_row: String(body.source_row || ''),
-            title: String(body.title || ''),
-            category: String(body.category || ''),
-            approved_at: String(body.approved_at || ''),
-            request_id: String(body.request_id || '')
-          }
+          ref: 'main',
+          inputs: { post_id: postId }
         })
       });
-      return json(res, 202, { ok: true, accepted: true, post_id: postId });
+      return json(res, 202, {
+        ok: true,
+        accepted: true,
+        platform: 'naver-only',
+        workflow: NAVER_WORKFLOW,
+        post_id: postId
+      });
     }
 
     if (req.method === 'GET' && req.url?.startsWith('/runs/latest')) {
-      const result = await github('/actions/runs?per_page=1');
+      const result = await github(`/actions/workflows/${NAVER_WORKFLOW}/runs?per_page=1`);
       return json(res, 200, result.data);
     }
 

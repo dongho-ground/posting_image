@@ -1,0 +1,48 @@
+name: Naver-Only Cloud Publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      post_id:
+        description: Approved Google Sheets post ID
+        required: true
+        type: string
+
+jobs:
+  publish_naver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Execute Naver publishing
+        env:
+          TARGET_POST_ID: ${{ inputs.post_id }}
+          NAVER_ID: ${{ secrets.NAVER_ID }}
+          NAVER_PW: ${{ secrets.NAVER_PW }}
+          NAVER_COOKIES: ${{ secrets.NAVER_COOKIES }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node publish_naver_cloud.mjs
+      - name: Upload proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: naver-publishing-proof
+          path: github_actions_published_proof.png
+          if-no-files-found: ignore
+      - name: Upload machine-readable result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: naver-publishing-result
+          path: publish_result.json
+          if-no-files-found: error
