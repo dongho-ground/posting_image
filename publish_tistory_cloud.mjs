@@ -191,10 +191,18 @@ async function run() {
   const img1Url = resolvePublicImageUrl(rawImg1 || targetRow[31] || targetRow[29] || targetRow[27], defaultImg1);
   const img2Url = resolvePublicImageUrl(rawImg2 || targetRow[32] || targetRow[30] || targetRow[28], defaultImg2);
 
-  // Helper: Format bold keywords with rich accent color
+  // Helper: Format bold keywords with rich contextual accent color and highlighting
   function applyBoldColor(text) {
     if (!text || typeof text !== 'string') return '';
-    return text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1d4ed8; font-weight: 700; background: #f0fdf4; padding: 2px 5px; border-radius: 4px; border-bottom: 2px solid #86efac;">$1</strong>');
+    return text.replace(/\*\*(.*?)\*\*/g, (match, p1) => {
+      if (/절감|세이브|인하|이득|혜택|순수|반토막|\d+만\s*원|\d+%/i.test(p1) && !/고금리|위험|부결|연체/i.test(p1)) {
+        return `<strong style="color: #15803d; font-weight: 800; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #bbf7d0;">${p1}</strong>`;
+      }
+      if (/고금리|위험|주의|부결|연체|수수료|폭망|단기/i.test(p1)) {
+        return `<span style="color: #dc2626; font-weight: 800; background: #fef2f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fecaca;">${p1}</span>`;
+      }
+      return `<strong style="color: #1d4ed8; font-weight: 800; background: #eff6ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bfdbfe;">${p1}</strong>`;
+    });
   }
 
   // Base CSS for zero empty-ad blanks, generous paragraph spacing, and clean typography
