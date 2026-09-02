@@ -1,4 +1,4 @@
-﻿name: 24/7 Multi-Blog Cloud Auto Publisher
+name: 24/7 Multi-Blog Cloud Auto Publisher
 
 on:
   schedule:
@@ -67,7 +67,7 @@ jobs:
           TISTORY_PW: ${{ secrets.TISTORY_PW || 'iamwon84^^@' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto' }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1598288296' }}
-        run: node publish_tistory_cloud.mjs
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" node publish_tistory_cloud.mjs
       - name: Upload Screenshot Artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -98,7 +98,7 @@ jobs:
           TISTORY_PW: ${{ secrets.TISTORY_PW || 'iamwon84^^@' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto' }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1598288296' }}
-        run: node publish_tistory_cloud.mjs
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" node publish_tistory_cloud.mjs
       - name: Upload Screenshot Artifact
         if: always()
         uses: actions/upload-artifact@v4

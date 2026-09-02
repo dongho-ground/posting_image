@@ -198,9 +198,9 @@ async function run() {
 `;
   }
 
-  console.log('[*] Launching Chromium in GitHub Actions Cloud Runner with Stealth Anti-Bot Evasions...');
+  console.log('[*] Launching Real Headed Chromium with Virtual Display Xvfb...');
   const browser = await chromium.launch({
-    headless: true,
+    headless: false,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
