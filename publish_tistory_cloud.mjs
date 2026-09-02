@@ -218,6 +218,20 @@ async function run() {
     timezoneId: 'Asia/Seoul'
   });
 
+  // Inject Authenticated Session Cookies (Completely eliminates Kakao 2FA prompts on phone)
+  const cookieFile = path.resolve('tistory_session_cookies.json');
+  let sessionCookies = [];
+  if (process.env.TISTORY_COOKIES) {
+    try { sessionCookies = JSON.parse(process.env.TISTORY_COOKIES); } catch(e){}
+  } else if (fs.existsSync(cookieFile)) {
+    try { sessionCookies = JSON.parse(fs.readFileSync(cookieFile, 'utf8')); } catch(e){}
+  }
+
+  if (sessionCookies.length > 0) {
+    console.log(`[*] Injecting ${sessionCookies.length} Authenticated Session Cookies into context (Zero 2FA)...`);
+    await context.addCookies(sessionCookies);
+  }
+
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
 
@@ -227,37 +241,30 @@ async function run() {
   });
 
   try {
-    console.log('[*] Navigating to Kakao Login...');
-    await page.goto('https://accounts.kakao.com/login?continue=https%3A%2F%2Fwww.tistory.com%2Fauth%2Flogin', { timeout: 30000 });
-    await page.waitForTimeout(3000);
-
-    const idInput = await page.$('#loginId--1, input[name="loginId"], input#id_email_2, input[type="email"]');
-    if (idInput) {
-      console.log('[*] Entering Kakao ID & Password...');
-      await idInput.fill(TISTORY_ID);
-      const pwInput = await page.$('#password--2, input[name="password"], input#id_password_3, input[type="password"]');
-      if (pwInput) await pwInput.fill(TISTORY_PW);
-      await page.waitForTimeout(500);
-
-      const submitBtn = await page.$('button[type="submit"].btn_g.highlight.submit, button.submit, button:has-text("로그인")');
-      if (submitBtn) await submitBtn.click();
-      await page.waitForTimeout(6000);
-    }
-
-    console.log(`[*] Navigating to Tistory writing page for [${TISTORY_BLOG_NAME}]...`);
+    console.log(`[*] Navigating directly to Tistory editor for [${TISTORY_BLOG_NAME}] with Session Cookies...`);
     await page.goto(`https://${TISTORY_BLOG_NAME}.tistory.com/manage/newpost`, { timeout: 30000 });
-    await page.waitForTimeout(6000);
+    await page.waitForTimeout(4000);
 
-    // If redirected to login again, try fallback login
-    if (page.url().includes('login')) {
-      console.log('[!] Detected login redirect, attempting secondary login...');
+    // If redirected to login page because cookie expired, fallback to Kakao login:
+    if (page.url().includes('login') || page.url().includes('kakao.com')) {
+      console.log('[!] Session cookies require renewal, performing fallback login...');
       const kakaoBtn = await page.$('a.btn_login.link_kakao_id, a:has-text("카카오계정으로 로그인")');
       if (kakaoBtn) {
         await kakaoBtn.click();
-        await page.waitForTimeout(4000);
+        await page.waitForTimeout(2000);
+      }
+      const idInput = await page.$('#loginId--1, input[name="loginId"], input#id_email_2, input[type="email"]');
+      if (idInput) {
+        await idInput.fill(TISTORY_ID);
+        const pwInput = await page.$('#password--2, input[name="password"], input#id_password_3, input[type="password"]');
+        if (pwInput) await pwInput.fill(TISTORY_PW);
+        await page.waitForTimeout(500);
+        const submitBtn = await page.$('button[type="submit"].btn_g.highlight.submit, button.submit, button:has-text("로그인")');
+        if (submitBtn) await submitBtn.click();
+        await page.waitForTimeout(6000);
       }
       await page.goto(`https://${TISTORY_BLOG_NAME}.tistory.com/manage/newpost`, { timeout: 30000 });
-      await page.waitForTimeout(6000);
+      await page.waitForTimeout(4000);
     }
 
     // 0. Determine Category for 원회계사 블로그 (Account tab)
