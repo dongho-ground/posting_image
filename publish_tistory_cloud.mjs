@@ -177,7 +177,7 @@ async function run() {
 `;
 
   // Build Comprehensive A4 1.5+ Page Rich Article
-  htmlContent = `
+  let htmlContent = `
 <article class="post-article">
 
   <!-- 1. 3줄 핵심 요약 박스 (차분한 에디토리얼 스타일) -->
