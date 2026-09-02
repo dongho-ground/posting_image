@@ -78,34 +78,46 @@ async function run() {
   // Helper: Convert pipe-delimited table text into semantic HTML table
   function parsePipeTable(rawText) {
     if (!rawText || typeof rawText !== 'string' || !rawText.trim()) return '';
-    const rows = rawText.split('///').map(r => r.trim()).filter(Boolean);
-    if (rows.length === 0) return '';
+    // Support standard markdown table lines as well as /// delimiters
+    let lines = [];
+    if (rawText.includes('///')) {
+      lines = rawText.split('///').map(r => r.trim()).filter(Boolean);
+    } else {
+      lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.startsWith('|') && l.endsWith('|'));
+    }
+    if (lines.length === 0) return '';
+
+    // Filter out markdown divider lines like |:---|:---|
+    const contentLines = lines.filter(l => !l.replace(/[\|\s:\-]/g, '').length === 0 && !/^[\s|:-]+$/.test(l));
+    if (contentLines.length === 0) return '';
+
+    // First line is header if markdown formatted
+    const rawHeader = contentLines[0];
+    const headerCols = rawHeader.split('|').map(c => c.trim()).filter(Boolean);
+    const bodyLines = contentLines.slice(1);
 
     let html = `
-<div class="table-scroll" style="overflow-x: auto; margin: 1.8rem 0; border: 1px solid #cbd5e1; border-radius: 6px;">
+<div class="table-scroll" style="overflow-x: auto; margin: 2rem 0; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
   <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; font-family: 'Noto Sans KR', sans-serif;">
     <thead>
       <tr style="background: #1e293b; color: #ffffff;">
-        <th style="padding: 12px 16px; font-weight: 700; border-right: 1px solid #334155; width: 25%;">항목 / 구분</th>
-        <th style="padding: 12px 16px; font-weight: 700; border-right: 1px solid #334155;">핵심 내용 및 실무 해설</th>
-        <th style="padding: 12px 16px; font-weight: 700;">세무·재무적 기대 효과 및 검증 포인트</th>
+        ${headerCols.map((h, i) => `<th style="padding: 14px 16px; font-weight: 700; border-right: 1px solid #334155; ${i === 0 ? 'width: 25%;' : ''}">${h}</th>`).join('')}
       </tr>
     </thead>
     <tbody>
 `;
 
-    rows.forEach((rowStr, idx) => {
-      const parts = rowStr.split('|').map(p => p.trim());
-      const col1 = parts[0] || '';
-      const col2 = parts[1] || '';
-      const col3 = parts.slice(2).join(' | ') || '';
+    bodyLines.forEach((rowStr, idx) => {
+      const cols = rowStr.split('|').map(p => p.trim()).filter(Boolean);
+      if (cols.length === 0) return;
       const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
 
       html += `
       <tr style="background: ${bg}; border-bottom: 1px solid #e2e8f0;">
-        <td style="padding: 12px 16px; font-weight: 600; color: #0f172a; border-right: 1px solid #e2e8f0; vertical-align: top;">${col1}</td>
-        <td style="padding: 12px 16px; color: #334155; border-right: 1px solid #e2e8f0; vertical-align: top;">${col2}</td>
-        <td style="padding: 12px 16px; color: #475569; vertical-align: top;">${col3 || '세무상 적법 증빙 및 정관/주총 결의 완비'}</td>
+        ${cols.map((col, cIdx) => {
+          const isFirst = cIdx === 0;
+          return `<td style="padding: 12px 16px; ${isFirst ? 'font-weight: 600; color: #0f172a;' : 'color: #334155;'} border-right: 1px solid #e2e8f0; vertical-align: top;">${col}</td>`;
+        }).join('')}
       </tr>
 `;
     });
