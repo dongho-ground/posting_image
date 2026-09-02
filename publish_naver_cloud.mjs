@@ -70,7 +70,9 @@ async function recoverNaverLogin(page) {
 
   await idInput.fill(NAVER_ID);
   await pwInput.fill(NAVER_PW);
-  const loginButton = page.locator('button.btn_login, #log\.login, button[type="submit"]').first();
+  const loginButton = page.locator(
+    '[id="log.login"], button.btn_login, button[type="submit"], input[type="submit"], button:has-text("로그인")'
+  ).first();
   if (await loginButton.count() === 0) throw new Error('Naver login submit button was not found');
   await Promise.all([
     page.waitForLoadState('domcontentloaded').catch(() => {}),
