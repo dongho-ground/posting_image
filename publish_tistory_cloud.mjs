@@ -456,24 +456,29 @@ async function run() {
       await publishBtn.click();
       await page.waitForTimeout(2000);
 
-      // Select 공개 (Public)
+      // Select 공개 (Public) - open0 is Public in Tistory, open20 is Private
       await page.evaluate(() => {
-        const radio = document.querySelector('input#open20');
-        if (radio) {
-          radio.checked = true;
-          radio.click();
+        const publicRadio = document.querySelector('input#open0, input[value="0"]');
+        if (publicRadio) {
+          publicRadio.checked = true;
+          publicRadio.click();
         }
-        const label = document.querySelector('label[for="open20"]');
-        if (label) label.click();
+        const publicLabel = document.querySelector('label[for="open0"]') ||
+                            Array.from(document.querySelectorAll('label')).find(l => l.innerText.trim() === '공개');
+        if (publicLabel) publicLabel.click();
       });
       await page.waitForTimeout(1000);
 
-      // Click Final Publish Button
-      await page.evaluate(() => {
-        const btn = document.querySelector('#publish-btn, button.btn_point, button.btn_apply') ||
-                    Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('발행') || b.innerText.includes('저장'));
-        if (btn) btn.click();
-      });
+      // Verify button says "공개 발행" and click
+      const finalPublishBtn = await page.$('#publish-btn, button:has-text("공개 발행"), button:has-text("발행")');
+      if (finalPublishBtn) {
+        await finalPublishBtn.click();
+      } else {
+        await page.evaluate(() => {
+          const btn = document.querySelector('#publish-btn') || Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('발행'));
+          if (btn) btn.click();
+        });
+      }
       await page.waitForTimeout(8000);
     }
 
