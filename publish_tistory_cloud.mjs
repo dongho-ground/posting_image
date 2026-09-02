@@ -198,48 +198,67 @@ async function run() {
 `;
   }
 
-  console.log('[*] Launching Chromium in GitHub Actions Cloud Runner for Tistory...');
+  console.log('[*] Launching Chromium in GitHub Actions Cloud Runner with Stealth Anti-Bot Evasions...');
   const browser = await chromium.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-blink-features=AutomationControlled',
+      '--disable-infobars',
+      '--window-size=1280,900'
+    ]
   });
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-    locale: 'ko-KR'
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    locale: 'ko-KR',
+    timezoneId: 'Asia/Seoul'
   });
 
   const page = await context.newPage();
-  page.setDefaultTimeout(20000);
+  page.setDefaultTimeout(30000);
+
+  // Stealth: remove navigator.webdriver
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+  });
 
   try {
-    console.log('[*] Navigating to Tistory login page...');
-    await page.goto('https://www.tistory.com/auth/login');
+    console.log('[*] Navigating to Kakao Login...');
+    await page.goto('https://accounts.kakao.com/login?continue=https%3A%2F%2Fwww.tistory.com%2Fauth%2Flogin', { timeout: 30000 });
     await page.waitForTimeout(3000);
 
-    const kakaoLoginBtn = await page.$('a.btn_login.link_kakao_id, a:has-text("카카오계정으로 로그인")');
-    if (kakaoLoginBtn) {
-      console.log('[*] Clicking Kakao Login button...');
-      await kakaoLoginBtn.click();
-      await page.waitForTimeout(3000);
+    const idInput = await page.$('#loginId--1, input[name="loginId"], input#id_email_2, input[type="email"]');
+    if (idInput) {
+      console.log('[*] Entering Kakao ID & Password...');
+      await idInput.fill(TISTORY_ID);
+      const pwInput = await page.$('#password--2, input[name="password"], input#id_password_3, input[type="password"]');
+      if (pwInput) await pwInput.fill(TISTORY_PW);
+      await page.waitForTimeout(500);
 
-      const idInput = await page.$('#loginId--1, input[name="loginId"]');
-      if (idInput) {
-        await idInput.fill(TISTORY_ID);
-        const pwInput = await page.$('#password--2, input[name="password"]');
-        if (pwInput) await pwInput.fill(TISTORY_PW);
-        await page.waitForTimeout(500);
-
-        const submitBtn = await page.$('button[type="submit"].btn_g.highlight.submit');
-        if (submitBtn) await submitBtn.click();
-        await page.waitForTimeout(6000);
-      }
+      const submitBtn = await page.$('button[type="submit"].btn_g.highlight.submit, button.submit, button:has-text("로그인")');
+      if (submitBtn) await submitBtn.click();
+      await page.waitForTimeout(6000);
     }
 
     console.log(`[*] Navigating to Tistory writing page for [${TISTORY_BLOG_NAME}]...`);
     await page.goto(`https://${TISTORY_BLOG_NAME}.tistory.com/manage/newpost`, { timeout: 30000 });
     await page.waitForTimeout(6000);
+
+    // If redirected to login again, try fallback login
+    if (page.url().includes('login')) {
+      console.log('[!] Detected login redirect, attempting secondary login...');
+      const kakaoBtn = await page.$('a.btn_login.link_kakao_id, a:has-text("카카오계정으로 로그인")');
+      if (kakaoBtn) {
+        await kakaoBtn.click();
+        await page.waitForTimeout(4000);
+      }
+      await page.goto(`https://${TISTORY_BLOG_NAME}.tistory.com/manage/newpost`, { timeout: 30000 });
+      await page.waitForTimeout(6000);
+    }
 
     // 0. Determine Category for 원회계사 블로그 (Account tab)
     let targetCategory = '회계';
