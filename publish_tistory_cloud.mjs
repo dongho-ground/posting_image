@@ -453,33 +453,28 @@ async function run() {
     console.log('[3/3] Clicking 완료 and Publishing...');
     const publishBtn = await page.$('#publish-layer-btn, button:has-text("완료"), .btn_publish, button.btn-default.btn-point');
     if (publishBtn) {
-      await publishBtn.click();
+      await publishBtn.click({ force: true });
       await page.waitForTimeout(3000);
 
-      // Select 공개 (Public) using page.evaluate (avoids CSS visibility timeout)
-      console.log('[*] Selecting 공개 (open20) in modal...');
-      await page.evaluate(() => {
-        const radio = document.querySelector('input#open20');
-        if (radio) {
-          radio.checked = true;
-          radio.click();
-          radio.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        const label = document.querySelector('label[for="open20"]') ||
-                      Array.from(document.querySelectorAll('label')).find(l => l.innerText.trim() === '공개');
-        if (label) {
-          label.click();
-        }
-      });
+      // Select 공개 (Public) using force: true click to trigger React state
+      console.log('[*] Clicking 공개 (open20) in modal with force: true...');
+      try {
+        await page.click('label[for="open20"]', { force: true, timeout: 4000 });
+      } catch (e) {
+        await page.click('input#open20', { force: true, timeout: 4000 }).catch(() => {});
+      }
       await page.waitForTimeout(1500);
 
-      // Click Final Publish Button using page.evaluate
-      console.log('[*] Clicking Final Publish Button in modal...');
-      await page.evaluate(() => {
-        const btn = document.querySelector('#publish-btn, button.btn_point, button.btn_apply') ||
-                    Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('발행') || b.innerText.includes('저장'));
-        if (btn) btn.click();
-      });
+      // Click Final [공개 발행] Button with force: true
+      console.log('[*] Clicking Final [공개 발행] button with force: true...');
+      try {
+        await page.click('#publish-btn, button:has-text("공개 발행"), button:has-text("발행"), button.btn_point', { force: true, timeout: 6000 });
+      } catch (e) {
+        await page.evaluate(() => {
+          const btn = document.querySelector('#publish-btn') || Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('발행'));
+          if (btn) btn.click();
+        });
+      }
       await page.waitForTimeout(10000);
     }
 
