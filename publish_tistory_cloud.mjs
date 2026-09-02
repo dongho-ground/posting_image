@@ -224,25 +224,25 @@ async function run() {
   </section>
   ` : ''}
 
-  <!-- 7. 4대 실무 솔루션 상세 가이드 -->
-  <section style="margin: 3rem 0;">
-    <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 0.6rem; margin-bottom: 1.5rem;">
+  <!-- 7. 4대 실무 솔루션 상세 가이드 (서술형 심층 해설) -->
+  <section style="margin: 3.5rem 0;">
+    <h2 style="font-size: 1.4rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 0.7rem; margin-bottom: 2rem;">
       2. 실무에서 검증된 합법적 4대 핵심 해결 방안
     </h2>
 
-    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+    <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
       ${sol1}
     </div>
 
-    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+    <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
       ${sol2}
     </div>
 
-    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+    <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
       ${sol3}
     </div>
 
-    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+    <div class="solution-article-block" style="margin-bottom: 2.5rem; line-height: 1.9; color: #334155; font-size: 16px;">
       ${sol4}
     </div>
   </section>
