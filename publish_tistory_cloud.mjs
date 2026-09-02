@@ -456,14 +456,14 @@ async function run() {
       await publishBtn.click();
       await page.waitForTimeout(2000);
 
-      // Select 공개 (Public) - open0 is Public in Tistory, open20 is Private
+      // Select 공개 (Public) - In Tistory: open20 is PUBLIC, open0 is PRIVATE
       await page.evaluate(() => {
-        const publicRadio = document.querySelector('input#open0, input[value="0"]');
+        const publicRadio = document.querySelector('input#open20, input[value="20"]');
         if (publicRadio) {
           publicRadio.checked = true;
           publicRadio.click();
         }
-        const publicLabel = document.querySelector('label[for="open0"]') ||
+        const publicLabel = document.querySelector('label[for="open20"]') ||
                             Array.from(document.querySelectorAll('label')).find(l => l.innerText.trim() === '공개');
         if (publicLabel) publicLabel.click();
       });
