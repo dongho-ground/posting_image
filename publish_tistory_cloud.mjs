@@ -510,21 +510,21 @@ async function run() {
     const articleHtml = await verifyPage.$eval('body', el => el.innerHTML);
 
     const hasTable = articleHtml.includes('<table') || articleText.includes('모델') || articleText.includes('비교') || articleText.includes('기준') || articleText.includes('DCF');
-    const hasSummary = articleText.includes('30초 핵심 요약') || articleHtml.includes('post-summary');
+    const hasSummary = articleText.includes('3줄 핵심 요약') || articleText.includes('30초 핵심 요약') || articleHtml.includes('summary-box');
     const hasCta = articleHtml.includes('forms.gle') || articleText.includes('원동호') || articleText.includes('상담') || articleText.includes('카카오톡');
     const textLength = articleText.length;
 
     console.log(`[*] Content Verification Metrics:`);
     console.log(`    - Text Length: ${textLength} chars`);
     console.log(`    - Has Table: ${hasTable}`);
-    console.log(`    - Has 30s Summary: ${hasSummary}`);
+    console.log(`    - Has 3-Line Summary: ${hasSummary}`);
     console.log(`    - Has CTA / Contact: ${hasCta}`);
 
-    if (textLength < 500 || !hasTable || !hasCta) {
-      throw new Error(`[검증 실패] 포스팅 본문 내용이 누락되었거나 불완전합니다! (글자수: ${textLength}, 표: ${hasTable}, CTA: ${hasCta})`);
+    if (textLength < 1200 || !hasTable || !hasCta) {
+      throw new Error(`[검증 실패] 포스팅 본문 내용이 누락되었거나 분량(A4 1.5장 이상)이 미달입니다! (글자수: ${textLength}, 표: ${hasTable}, CTA: ${hasCta})`);
     }
 
-    console.log('🎉 [VERIFICATION PASSED 100%] Content is rich, complete, and live on Tistory!');
+    console.log('🎉 [VERIFICATION PASSED 100%] Content is rich (A4 1.5+ pages), complete, and live on Tistory!');
     await verifyPage.close();
 
     const purposeText = TARGET_TAB === 'Account' ? `💼 B2B 법인 고객 유치 [카테고리: ${targetCategory}]` : '📈 애드센스 광고 수익 및 검색 조회수 극대화';
