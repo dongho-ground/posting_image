@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: naver-publishing-relay
+    runtime: node
+    rootDir: render-relay
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: RELAY_KEY
+        generateValue: true
+      - key: REPO_OWNER
+        value: dongho-ground
+      - key: REPO_NAME
+        value: posting_image
