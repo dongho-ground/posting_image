@@ -526,7 +526,7 @@ async function run() {
 
     const hasTable = articleHtml.includes('<table') || articleText.includes('모델') || articleText.includes('비교') || articleText.includes('기준') || articleText.includes('DCF');
     const hasSummary = articleText.includes('3줄 핵심 요약') || articleText.includes('30초 핵심 요약') || articleHtml.includes('summary-box');
-    const hasCta = articleHtml.includes('forms.gle') || articleText.includes('원동호') || articleText.includes('상담') || articleText.includes('카카오톡');
+    const hasCta = articleHtml.includes('forms.gle') || articleText.includes('원동호') || articleText.includes('상담') || articleText.includes('카카오톡') || articleText.includes('구독') || articleHtml.includes('post-cta');
     const textLength = articleText.length;
 
     console.log(`[*] Content Verification Metrics:`);
