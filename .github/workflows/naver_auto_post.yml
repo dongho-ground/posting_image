@@ -31,6 +31,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Execute 24/7 Naver Blog Publishing
         env:
+          TARGET_POST_ID: ${{ github.event.client_payload.post_id }}
           NAVER_ID: ${{ secrets.NAVER_ID }}
           NAVER_PW: ${{ secrets.NAVER_PW }}
           NAVER_COOKIES: ${{ secrets.NAVER_COOKIES }}
@@ -44,6 +45,13 @@ jobs:
           name: naver-publishing-proof
           path: github_actions_published_proof.png
           if-no-files-found: ignore
+      - name: Upload Machine-readable Result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: naver-publishing-result
+          path: publish_result.json
+          if-no-files-found: error
 
   publish_tistory_account:
     if: github.event.action == 'tistory_account_post' || (github.event_name == 'workflow_dispatch' && inputs.target_platform == 'tistory_account')

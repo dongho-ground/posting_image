@@ -10,6 +10,15 @@ const NAVER_PW = process.env.NAVER_PW || '';
 const NAVER_COOKIES_JSON = process.env.NAVER_COOKIES || '';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+const TARGET_POST_ID = process.env.TARGET_POST_ID?.trim() || '';
+const RESULT_PATH = path.resolve('publish_result.json');
+
+function writeResult(result) {
+  fs.writeFileSync(RESULT_PATH, JSON.stringify({
+    ...result,
+    generated_at: new Date().toISOString()
+  }, null, 2));
+}
 
 async function sendTelegram(msg) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
@@ -51,30 +60,26 @@ async function run() {
     return;
   }
 
-  let targetRow = null;
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const postDate = r[6]?.trim();
-    const status = r[7]?.trim();
-    if (postDate === today && status === 'Ready') {
-      targetRow = r;
-      break;
-    }
+  const isPublishable = (r) =>
+    r[7]?.trim() === 'Approved' &&
+    Boolean(r[41]?.trim()) &&
+    !r[42]?.trim() &&
+    !r[8]?.trim();
+
+  let targetRow = TARGET_POST_ID
+    ? rows.slice(1).find((r) => r[0]?.trim() === TARGET_POST_ID && isPublishable(r))
+    : rows.slice(1).find((r) => r[6]?.trim() === today && isPublishable(r));
+
+  if (!targetRow && !TARGET_POST_ID) {
+    targetRow = rows.slice(1).find(isPublishable);
   }
 
   if (!targetRow) {
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      if (r[7]?.trim() === 'Ready') {
-        targetRow = r;
-        break;
-      }
-    }
-  }
-
-  if (!targetRow) {
-    console.log('[*] No posts in "Ready" status found. Skipping publishing.');
-    return;
+    const reason = TARGET_POST_ID
+      ? `Requested post ${TARGET_POST_ID} is missing or not publishable`
+      : 'No Approved post satisfies approval/review/URL gates';
+    writeResult({ success: false, published: false, reason, target_post_id: TARGET_POST_ID });
+    throw new Error(reason);
   }
 
   const postId = targetRow[0];
@@ -154,12 +159,11 @@ async function run() {
 
     // 1. Enter Title
     console.log('[1/5] Entering Title...');
-    const titleArea = await frame.$('.se-documentTitle, .se-section-documentTitle, [contenteditable="true"]');
-    if (titleArea) {
-      await titleArea.click();
-      await page.keyboard.type(title, { delay: 10 });
-      await page.waitForTimeout(500);
-    }
+    const titleArea = await frame.$('.se-documentTitle, .se-section-documentTitle');
+    if (!titleArea) throw new Error('SmartEditor title field was not found');
+    await titleArea.click();
+    await page.keyboard.type(title, { delay: 10 });
+    await page.waitForTimeout(500);
 
     // 2. Attach Header 3D Image (Image 1)
     if (fs.existsSync(img1Path)) {
@@ -202,9 +206,8 @@ async function run() {
     ];
 
     const bodyP = frame.locator('.se-component.se-text p, .se-canvas').last();
-    if (await bodyP.count() > 0) {
-      await bodyP.click({ force: true });
-    }
+    if (await bodyP.count() === 0) throw new Error('SmartEditor body field was not found');
+    await bodyP.click({ force: true });
 
     for (const p of bodyParagraphs) {
       if (p) {
@@ -237,16 +240,14 @@ async function run() {
 
     // 5. Click Publish & Confirm
     console.log('[5/5] Clicking Publish & Confirm buttons...');
-    await frame.evaluate(() => {
-      const btn = document.querySelector('button[data-click-area="tpb.publish"], button.publish_btn__m9KHH, button[class*="publish_btn"], button:has-text("발행")');
-      if (btn) btn.click();
-    });
+    const publishButton = frame.locator('button[data-click-area="tpb.publish"], button[class*="publish_btn"]').first();
+    if (await publishButton.count() === 0) throw new Error('Publish button was not found');
+    await publishButton.click();
     await page.waitForTimeout(2500);
 
-    await frame.evaluate(() => {
-      const confirmBtn = document.querySelector('button[data-click-area="ptb.confirm"], button.confirm_btn__WEaBq, button[class*="confirm_btn"], button:has-text("발행하기")');
-      if (confirmBtn) confirmBtn.click();
-    });
+    const confirmButton = frame.locator('button[data-click-area="ptb.confirm"], button[class*="confirm_btn"]').first();
+    if (await confirmButton.count() === 0) throw new Error('Publish confirmation button was not found');
+    await confirmButton.click();
 
     console.log('[*] Waiting 8s for publication to finalize on Naver...');
     await page.waitForTimeout(8000);
@@ -255,7 +256,21 @@ async function run() {
     await page.screenshot({ path: proofPath, fullPage: true });
     console.log(`[✓] Proof screenshot saved: ${proofPath}`);
 
-    const publishedUrl = `https://blog.naver.com/${NAVER_ID}`;
+    const verifyPage = await context.newPage();
+    await verifyPage.goto(`https://blog.naver.com/${NAVER_ID}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await verifyPage.waitForTimeout(4000);
+    const verifyFrame = (await verifyPage.$('#mainFrame'))
+      ? await (await verifyPage.$('#mainFrame')).contentFrame()
+      : verifyPage;
+    const exactTitle = verifyFrame.getByText(title, { exact: true }).first();
+    if (await exactTitle.count() === 0) {
+      throw new Error(`Published post verification failed: exact title not found (${title})`);
+    }
+    const titleLink = exactTitle.locator('xpath=ancestor-or-self::a[1]');
+    const href = await titleLink.getAttribute('href');
+    if (!href) throw new Error('Published post verification failed: post URL not found');
+    const publishedUrl = new URL(href, `https://blog.naver.com/${NAVER_ID}`).toString();
+    writeResult({ success: true, published: true, post_id: postId, title, published_url: publishedUrl });
     const reportMsg = `🚀 <b>[GitHub Actions 24/7 클라우드 무인 포스팅 성공]</b>\n\n` +
       `• <b>포스트ID</b>: <code>${postId}</code>\n` +
       `• <b>분야</b>: ${field}\n` +
@@ -270,6 +285,7 @@ async function run() {
     console.log('[SUCCESS] All Done!');
   } catch (err) {
     console.error('[ERROR] Publishing failed:', err);
+    writeResult({ success: false, published: false, post_id: postId, title, reason: err.message });
     await sendTelegram(`🚨 [GitHub Actions 에러 알림]\n\n네이버 블로그 무인 발행 중 에러 발생:\n${err.message}`);
     throw err;
   } finally {
