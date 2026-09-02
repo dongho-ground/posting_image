@@ -144,6 +144,7 @@ async function run() {
   const qna2 = targetRow[24] || '';
   const qna3 = targetRow[25] || '';
   const closing = targetRow[27] || '';
+  const cta = targetRow[28] || '';
   // Robust Public CDN Image Resolver
   function resolvePublicImageUrl(rawUrl, fallbackFilename) {
     if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
