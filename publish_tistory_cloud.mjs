@@ -162,8 +162,21 @@ async function run() {
     return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${clean}`;
   }
 
-  const img1Url = resolvePublicImageUrl(targetRow[31] || targetRow[29], 'burnrate_runway_custom_3d.png');
-  const img2Url = resolvePublicImageUrl(targetRow[32] || targetRow[30], 'burnrate_cashflow_flowchart_3d.png');
+  // Dynamic smart image detection across both Account and adsens tabs
+  let rawImg1 = '';
+  let rawImg2 = '';
+  for (let c = targetRow.length - 1; c >= 20; c--) {
+    const val = (targetRow[c] || '').trim();
+    if (val.includes('.png') || val.includes('.jpg') || val.includes('http')) {
+      if (!rawImg2) rawImg2 = val;
+      else if (!rawImg1) { rawImg1 = val; break; }
+    }
+  }
+
+  const defaultImg1 = TARGET_TAB === 'Account' ? 'burnrate_runway_3d_concept.png' : 'loan_refinance_3d_concept.png';
+  const defaultImg2 = TARGET_TAB === 'Account' ? 'burnrate_metrics_dashboard_3d.png' : 'loan_refinance_step_flowchart_3d.png';
+  const img1Url = resolvePublicImageUrl(rawImg1 || targetRow[31] || targetRow[29] || targetRow[27], defaultImg1);
+  const img2Url = resolvePublicImageUrl(rawImg2 || targetRow[32] || targetRow[30] || targetRow[28], defaultImg2);
 
   // Base CSS for zero empty-ad blanks, smooth line-height, and clean Noto Sans KR typography
   const baseStyle = `
