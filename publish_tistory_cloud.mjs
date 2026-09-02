@@ -144,9 +144,24 @@ async function run() {
   const qna2 = targetRow[24] || '';
   const qna3 = targetRow[25] || '';
   const closing = targetRow[27] || '';
-  const cta = targetRow[28] || '';
-  const img1Url = targetRow[31] || 'https://dongho-ground.github.io/posting_image/images/valuation_startup_custom_3d.png';
-  const img2Url = targetRow[32] || 'https://dongho-ground.github.io/posting_image/images/valuation_flowchart_custom_3d.png';
+  // Robust Public CDN Image Resolver
+  function resolvePublicImageUrl(rawUrl, fallbackFilename) {
+    if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
+      return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${fallbackFilename}`;
+    }
+    let clean = rawUrl.trim();
+    if (clean.includes('github.com') && clean.includes('/images/')) {
+      const filename = clean.split('/images/').pop();
+      return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${filename}`;
+    }
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      return clean;
+    }
+    return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${clean}`;
+  }
+
+  const img1Url = resolvePublicImageUrl(targetRow[31] || targetRow[29], 'burnrate_runway_custom_3d.png');
+  const img2Url = resolvePublicImageUrl(targetRow[32] || targetRow[30], 'burnrate_cashflow_flowchart_3d.png');
 
   // Base CSS for zero empty-ad blanks, smooth line-height, and clean Noto Sans KR typography
   const baseStyle = `
