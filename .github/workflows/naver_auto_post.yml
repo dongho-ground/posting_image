@@ -31,11 +31,11 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Execute 24/7 Naver Blog Publishing
         env:
-          NAVER_ID: ${{ secrets.NAVER_ID || 'wonrexander' }}
-          NAVER_PW: ${{ secrets.NAVER_PW || 'iamwon84^^!@' }}
+          NAVER_ID: ${{ secrets.NAVER_ID }}
+          NAVER_PW: ${{ secrets.NAVER_PW }}
           NAVER_COOKIES: ${{ secrets.NAVER_COOKIES }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto' }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1598288296' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node publish_naver_cloud.mjs
       - name: Upload Screenshot Artifact
         if: always()
@@ -63,10 +63,11 @@ jobs:
       - name: Execute 24/7 Tistory Account (B2B) Publishing
         env:
           TISTORY_TAB: 'Account'
-          TISTORY_ID: ${{ secrets.TISTORY_ID || 'skymard@hanmail.net' }}
-          TISTORY_PW: ${{ secrets.TISTORY_PW || 'iamwon84^^@' }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto' }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1598288296' }}
+          TISTORY_ID: ${{ secrets.TISTORY_ID }}
+          TISTORY_PW: ${{ secrets.TISTORY_PW }}
+          TISTORY_COOKIES: ${{ secrets.TISTORY_COOKIES }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" node publish_tistory_cloud.mjs
       - name: Upload Screenshot Artifact
         if: always()
@@ -94,10 +95,11 @@ jobs:
       - name: Execute 24/7 Tistory AdSense (Traffic) Publishing
         env:
           TISTORY_TAB: 'adsens'
-          TISTORY_ID: ${{ secrets.TISTORY_ID || 'skymard@hanmail.net' }}
-          TISTORY_PW: ${{ secrets.TISTORY_PW || 'iamwon84^^@' }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto' }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1598288296' }}
+          TISTORY_ID: ${{ secrets.TISTORY_ID }}
+          TISTORY_PW: ${{ secrets.TISTORY_PW }}
+          TISTORY_COOKIES: ${{ secrets.TISTORY_COOKIES }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" node publish_tistory_cloud.mjs
       - name: Upload Screenshot Artifact
         if: always()
