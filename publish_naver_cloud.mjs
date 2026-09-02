@@ -160,6 +160,12 @@ async function run() {
       frame = await mainFrameEl.contentFrame();
     }
 
+    const editorUrl = frame?.url?.() || page.url();
+    const editorTitle = await page.title().catch(() => '');
+    console.log(`[*] Browser URL: ${page.url()}`);
+    console.log(`[*] Editor frame URL: ${editorUrl}`);
+    console.log(`[*] Page title: ${editorTitle}`);
+
     // Dismiss any popup/draft restore alerts
     try {
       const cancelBtn = await frame.$('.se-popup-button-cancel, button:has-text("취소")');
@@ -173,7 +179,13 @@ async function run() {
     // 1. Enter Title
     console.log('[1/5] Entering Title...');
     const titleArea = await frame.$('.se-documentTitle, .se-section-documentTitle');
-    if (!titleArea) throw new Error('SmartEditor title field was not found');
+    if (!titleArea) {
+      await page.screenshot({ path: path.resolve('github_actions_published_proof.png'), fullPage: true });
+      const authBlocked = /nid\.naver\.com|nidlogin|login/i.test(`${page.url()} ${editorUrl}`);
+      throw new Error(authBlocked
+        ? `Naver session cookies were rejected; login page reached (${editorUrl})`
+        : `SmartEditor title field was not found (${editorUrl})`);
+    }
     await titleArea.click();
     await page.keyboard.type(title, { delay: 10 });
     await page.waitForTimeout(500);
