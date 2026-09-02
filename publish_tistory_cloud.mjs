@@ -197,7 +197,7 @@ async function run() {
     return text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1d4ed8; font-weight: 700; background: #f0fdf4; padding: 2px 5px; border-radius: 4px; border-bottom: 2px solid #86efac;">$1</strong>');
   }
 
-  // Base CSS for zero empty-ad blanks, smooth line-height, and clean Noto Sans KR typography
+  // Base CSS for zero empty-ad blanks, generous paragraph spacing, and clean typography
   const baseStyle = `
 <style>
   /* 미송출/빈 광고 슬롯 공백 원천 차단 */
@@ -218,9 +218,28 @@ async function run() {
   }
   .post-article {
     font-family: 'Noto Sans KR', -apple-system, sans-serif;
-    color: #334155;
-    line-height: 1.85;
-    font-size: 16px;
+    color: #1e293b;
+    line-height: 2.1;
+    font-size: 16.5px;
+    word-break: keep-all;
+  }
+  .post-article p {
+    margin-bottom: 2.2rem !important;
+    line-height: 2.1 !important;
+    font-size: 16.5px !important;
+    color: #334155 !important;
+  }
+  .post-article li {
+    margin-bottom: 1.1rem !important;
+    line-height: 2.0 !important;
+  }
+  .post-article h2 {
+    margin-top: 3.5rem !important;
+    margin-bottom: 1.8rem !important;
+  }
+  .post-article h3 {
+    margin-top: 2.8rem !important;
+    margin-bottom: 1.2rem !important;
   }
 </style>
 `;
