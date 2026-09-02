@@ -75,9 +75,79 @@ async function run() {
 
   console.log(`[*] Publishing Tistory Post [${postId}]: ${title} (Tab: ${TARGET_TAB})`);
 
-  // Build Semantic HTML conforming to Tistory_posting_guide.md
-  let htmlContent = '';
-  
+  // Helper: Convert pipe-delimited table text into semantic HTML table
+  function parsePipeTable(rawText) {
+    if (!rawText || typeof rawText !== 'string' || !rawText.trim()) return '';
+    const rows = rawText.split('///').map(r => r.trim()).filter(Boolean);
+    if (rows.length === 0) return '';
+
+    let html = `
+<div class="table-scroll" style="overflow-x: auto; margin: 1.8rem 0; border: 1px solid #cbd5e1; border-radius: 6px;">
+  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; font-family: 'Noto Sans KR', sans-serif;">
+    <thead>
+      <tr style="background: #1e293b; color: #ffffff;">
+        <th style="padding: 12px 16px; font-weight: 700; border-right: 1px solid #334155; width: 25%;">항목 / 구분</th>
+        <th style="padding: 12px 16px; font-weight: 700; border-right: 1px solid #334155;">핵심 내용 및 실무 해설</th>
+        <th style="padding: 12px 16px; font-weight: 700;">세무·재무적 기대 효과 및 검증 포인트</th>
+      </tr>
+    </thead>
+    <tbody>
+`;
+
+    rows.forEach((rowStr, idx) => {
+      const parts = rowStr.split('|').map(p => p.trim());
+      const col1 = parts[0] || '';
+      const col2 = parts[1] || '';
+      const col3 = parts.slice(2).join(' | ') || '';
+      const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+      html += `
+      <tr style="background: ${bg}; border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 12px 16px; font-weight: 600; color: #0f172a; border-right: 1px solid #e2e8f0; vertical-align: top;">${col1}</td>
+        <td style="padding: 12px 16px; color: #334155; border-right: 1px solid #e2e8f0; vertical-align: top;">${col2}</td>
+        <td style="padding: 12px 16px; color: #475569; vertical-align: top;">${col3 || '세무상 적법 증빙 및 정관/주총 결의 완비'}</td>
+      </tr>
+`;
+    });
+
+    html += `
+    </tbody>
+  </table>
+</div>
+`;
+    return html;
+  }
+
+  // Helper: Format FAQ Box
+  function formatFaqBox(qnaText) {
+    if (!qnaText || !qnaText.trim()) return '';
+    return `
+<div style="margin: 1.2rem 0; padding: 1.25rem 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.8;">
+  ${qnaText}
+</div>
+`;
+  }
+
+  // Extract all columns
+  const intro1 = targetRow[9] || '';
+  const intro2 = targetRow[10] || '';
+  const quote = targetRow[11] || '';
+  const lawAnalysis = targetRow[12] || '';
+  const sol1 = targetRow[14] || '';
+  const sol2 = targetRow[15] || '';
+  const sol3 = targetRow[16] || '';
+  const sol4 = targetRow[17] || '';
+  const table1 = targetRow[19] || '';
+  const table2 = targetRow[20] || '';
+  const table3 = targetRow[21] || '';
+  const qna1 = targetRow[23] || '';
+  const qna2 = targetRow[24] || '';
+  const qna3 = targetRow[25] || '';
+  const closing = targetRow[27] || '';
+  const cta = targetRow[28] || '';
+  const img1Url = targetRow[31] || 'https://dongho-ground.github.io/posting_image/images/valuation_startup_custom_3d.png';
+  const img2Url = targetRow[32] || 'https://dongho-ground.github.io/posting_image/images/valuation_flowchart_custom_3d.png';
+
   // Base CSS for zero empty-ad blanks, smooth line-height, and clean Noto Sans KR typography
   const baseStyle = `
 <style>
@@ -106,126 +176,126 @@ async function run() {
 </style>
 `;
 
-  if (TARGET_TAB === 'Account') {
-    // B2B Client Acquisition Structure
-    htmlContent = `
-<div class="post-summary" style="padding: 1.25rem; border-left: 4px solid #174a73; background: #f5f7f9; border-radius: 6px; margin-bottom: 2rem; line-height: 1.8;">
-  <p style="margin: 0; font-weight: 500; color: #20252b;">
-    스타트업과 중소기업이 첫 기관 투자(Series A, B)나 주주 간 지분 거래를 진행할 때, 공인된 비상장주식 기업가치평가(Valuation) 보고서는 창업자의 소중한 지분을 방어하고 국세청 증여세 세무조사 리스크를 원천 차단하는 가장 핵심적인 재무 안전장치입니다.
-  </p>
-</div>
+  // Build Comprehensive A4 1.5+ Page Rich Article
+  htmlContent = `
+<article class="post-article">
 
-<h2 style="color: #17324d; margin: 2.5rem 0 1rem; font-size: 1.5rem; border-bottom: 2px solid #174a73; padding-bottom: 0.5rem;">1. 비상장주식 가치평가 3대 핵심 모델 비교</h2>
-<p style="line-height: 1.8; color: #333;">비상장법인의 주식 평가는 기업의 성장 단계와 거래 목적에 따라 최적의 평가 모델을 선택해야 합니다.</p>
-
-<div class="table-scroll" style="overflow-x: auto; margin: 1.5rem 0;">
-  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
-    <thead>
-      <tr style="background: #174a73; color: #fff;">
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">평가 모델</th>
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">핵심 산정 원리</th>
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">최적 적용 대상</th>
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">세무/감사 리스크</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="background: #fff;">
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; font-weight: bold;">DCF 현금흐름할인법</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">미래 5개년 FCFF를 WACC으로 할인</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">기술기반 고성장 스타트업</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">추정 근거 객관성 필수</td>
-      </tr>
-      <tr style="background: #f9fbfd;">
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; font-weight: bold;">상대가치평가 (Multiple)</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">유사 상장사 EV/EBITDA, PSR 배수 대조</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">매출 및 영업이익 가시성 확보 기업</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">피어그룹 선정 타당성 검증</td>
-      </tr>
-      <tr style="background: #fff;">
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; font-weight: bold;">상증세법 보충적평가</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">순손익가치 : 순자산가치 = 3 : 2 가중평균</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">특수관계자 거래 / 상속·증여</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">법적 최소 과세 안전선 확보</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<h2 style="color: #17324d; margin: 2.5rem 0 1rem; font-size: 1.5rem; border-bottom: 2px solid #174a73; padding-bottom: 0.5rem;">2. 상환전환우선주(RCPS) 리픽싱 조항과 K-IFRS 회계 리스크</h2>
-<p style="line-height: 1.8; color: #333;">
-  투자 계약 시 관행적으로 삽입되는 리픽싱(전환가 하향 조정) 조항은 K-IFRS 도입 시 우선주 전체가 <strong>'파생상품 부채'</strong>로 분류되어 수십억 원의 당기순손실(평가손실)을 유발할 수 있습니다. 계약서 날인 전 공인회계사의 파생부채 사전 영향 분석이 필수적입니다.
-</p>
-
-<aside class="cpa-note" style="padding: 1.25rem; border-left: 4px solid #a9432f; background: #fff8f7; border-radius: 6px; margin: 2rem 0; line-height: 1.8;">
-  <p style="margin: 0; color: #842010; font-weight: bold;">⚠️ 회계사 실무 조언: 상증세법 제60조 세무조사 주의사항</p>
-  <p style="margin: 0.5rem 0 0; color: #555; font-size: 0.95rem;">
-    시가보다 현저히 낮거나 높은 가액으로 비상장주식을 거래할 경우 상속세및증여세법 제35조에 따라 양도자 및 양수자 모두에게 막대한 증여세 및 부당행위계산부인이 추징될 수 있습니다.
-  </p>
-</aside>
-
-<section class="post-cta" style="margin: 3rem 0; padding: 1.5rem; border: 1px solid #dce2e7; border-radius: 10px; background: #fafbfc; line-height: 1.8;">
-  <h3 style="margin-top: 0; color: #174a73; font-size: 1.25rem;">💼 원동호 공인회계사 (WON CPA) 1:1 맞춤 자문 안내</h3>
-  <p style="color: #444; font-size: 0.95rem;">
-    대형회계법인 출신 공인회계사가 기업의 재무제표와 비즈니스 모델에 꼭 맞는 객관적인 기업가치평가 보고서와 투자유치 재무 자문을 1:1로 직접 수행합니다.
-  </p>
-  <ul style="color: #444; font-size: 0.95rem; padding-left: 1.2rem;">
-    <li>💬 <strong>카카오톡 상담</strong>: 카카오톡 검색창에서 <strong>[원회계사]</strong> 검색</li>
-    <li>✉️ <strong>이메일 문의</strong>: skymard@hanmail.net</li>
-  </ul>
-  <div style="margin-top: 1.2rem;">
-    <a href="https://forms.gle/MG2u9M4aXJ5psfA27" target="_blank" style="display: inline-block; background: #174a73; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.95rem;">📝 30초 온라인 간편 상담 신청하기 →</a>
+  <!-- 1. 3줄 핵심 요약 박스 (차분한 에디토리얼 스타일) -->
+  <div class="summary-box" style="margin: 1.5rem 0 2rem; padding: 1.5rem 1.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #1e3a8a; border-radius: 6px; line-height: 1.85;">
+    ${intro1}
   </div>
-</section>
-`;
-  } else {
-    // AdSense High-Traffic Viral Structure
-    htmlContent = `
-<div class="post-summary" style="padding: 1.25rem; border-left: 4px solid #0066cc; background: #f0f7ff; border-radius: 6px; margin-bottom: 2rem; line-height: 1.8;">
-  <p style="margin: 0; font-weight: 500; color: #1a3a60;">
-    최근 많은 분들이 가장 궁금해하시는 실시간 화제 이슈와 알짜 생활 금융 정보! 2026년 최신 변경 사항과 놓치면 손해 보는 핵심 혜택 및 신청 방법을 알기 쉽게 총정리해 드립니다.
+
+  <!-- 2. 도입부 상세 해설 (초보자 눈높이 현장 문제제기) -->
+  <section style="margin: 2rem 0;">
+    <p style="margin-bottom: 1.2rem; color: #334155; font-size: 1.05rem; line-height: 1.85;">
+      ${intro2}
+    </p>
+  </section>
+
+  <!-- 3. 실제 상담 사례 인용구 박스 -->
+  ${quote ? `
+  <blockquote style="margin: 2rem 0; padding: 1.25rem 1.5rem; background: #f1f5f9; border-left: 4px solid #64748b; border-radius: 4px; font-style: italic; color: #1e293b; line-height: 1.8;">
+    ${quote}
+  </blockquote>
+  ` : ''}
+
+  <!-- 4. 대표 3D 인포그래픽 이미지 -->
+  <p style="text-align: center; margin: 2.5rem 0;">
+    <img src="${img1Url}" referrerpolicy="no-referrer" alt="${title} 핵심 가이드 인포그래픽" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);" />
   </p>
-</div>
 
-<h2 style="color: #1a3a60; margin: 2.5rem 0 1rem; font-size: 1.5rem; border-bottom: 2px solid #0066cc; padding-bottom: 0.5rem;">📌 주요 변경 핵심 요약 한눈에 보기</h2>
-<p style="line-height: 1.8; color: #333;">올해 새롭게 바뀌거나 지원 금액이 대폭 확대된 알짜 항목들을 표로 비교 정리했습니다.</p>
+  <!-- 5. 세법 및 재무원리 심층 분석 -->
+  <section style="margin: 2.5rem 0;">
+    <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 0.6rem; margin-bottom: 1.2rem;">
+      1. 왜 이 문제가 발생하며, 법적으로 무엇이 가장 위험할까요?
+    </h2>
+    <p style="margin-bottom: 1.2rem; color: #334155; line-height: 1.85;">
+      ${lawAnalysis}
+    </p>
+  </section>
 
-<div class="table-scroll" style="overflow-x: auto; margin: 1.5rem 0;">
-  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
-    <thead>
-      <tr style="background: #0066cc; color: #fff;">
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">구분 항목</th>
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">기존 기준</th>
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">2026년 개정 혜택</th>
-        <th style="padding: 12px 14px; border: 1px solid #dce2e7;">신청 대상</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="background: #fff;">
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; font-weight: bold;">지원 혜택 1</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">연 최대 50만 원</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; color: #d9381e; font-weight: bold;">연 최대 120만 원 확대</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">전 국민 대상</td>
-      </tr>
-      <tr style="background: #f9fbfd;">
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; font-weight: bold;">신청 자격 기준</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">중위소득 100% 이하</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7; color: #0066cc; font-weight: bold;">중위소득 150% 이하 완화</td>
-        <td style="padding: 10px 14px; border: 1px solid #dce2e7;">직장인 및 자영업자</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+  <!-- 6. 핵심 요약 비교표 -->
+  ${table1 ? `
+  <section style="margin: 2.5rem 0;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.8rem;">
+      📊 핵심 모델 및 방식별 비교 분석
+    </h3>
+    ${parsePipeTable(table1)}
+  </section>
+  ` : ''}
 
-<h2 style="color: #1a3a60; margin: 2.5rem 0 1rem; font-size: 1.5rem; border-bottom: 2px solid #0066cc; padding-bottom: 0.5rem;">💡 자주 묻는 질문 FAQ Best 3</h2>
-<div style="background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; line-height: 1.8;">
-  <p style="font-weight: bold; color: #0066cc; margin: 0 0 0.5rem;">Q1. 기존에 이미 혜택을 받은 사람도 중복 신청이 가능한가요?</p>
-  <p style="margin: 0 0 1.2rem; color: #444;">네! 연도별 개정 기준에 따라 신규 지원 요건에 해당하면 추가 신청이 가능합니다.</p>
-  
-  <p style="font-weight: bold; color: #0066cc; margin: 0 0 0.5rem;">Q2. 신청 시 꼭 준비해야 하는 필수 서류는 무엇인가요?</p>
-  <p style="margin: 0 0 1.2rem; color: #444;">신분증, 본인 명의 통장 사본, 그리고 정부24 소득금액증명원만 온라인으로 발급받으시면 5분 만에 접수가 완료됩니다.</p>
-</div>
+  <!-- 7. 4대 실무 솔루션 상세 가이드 -->
+  <section style="margin: 3rem 0;">
+    <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 0.6rem; margin-bottom: 1.5rem;">
+      2. 실무에서 검증된 합법적 4대 핵심 해결 방안
+    </h2>
+
+    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+      ${sol1}
+    </div>
+
+    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+      ${sol2}
+    </div>
+
+    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+      ${sol3}
+    </div>
+
+    <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; line-height: 1.85;">
+      ${sol4}
+    </div>
+  </section>
+
+  <!-- 8. 본문 플로우차트 이미지 -->
+  <p style="text-align: center; margin: 2.5rem 0;">
+    <img src="${img2Url}" referrerpolicy="no-referrer" alt="${title} 실무 프로세스 플로우차트" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);" />
+  </p>
+
+  <!-- 9. 금액대별 시뮬레이션 표 -->
+  ${table2 ? `
+  <section style="margin: 2.5rem 0;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.8rem;">
+      📈 규모 및 금액대별 절세·재무 시뮬레이션
+    </h3>
+    ${parsePipeTable(table2)}
+  </section>
+  ` : ''}
+
+  <!-- 10. 세무조사 및 감사 대비 체크리스트 표 -->
+  ${table3 ? `
+  <section style="margin: 2.5rem 0;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #b91c1c; margin-bottom: 0.8rem;">
+      ⚠️ 국세청 세무조사 & 외부감사 필수 점검 체크리스트
+    </h3>
+    ${parsePipeTable(table3)}
+  </section>
+  ` : ''}
+
+  <!-- 11. 실무 Q&A Best 3 -->
+  <section style="margin: 3rem 0;">
+    <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 0.6rem; margin-bottom: 1.2rem;">
+      3. 실무에서 가장 자주 묻는 질문 FAQ
+    </h2>
+    ${formatFaqBox(qna1)}
+    ${formatFaqBox(qna2)}
+    ${formatFaqBox(qna3)}
+  </section>
+
+  <!-- 12. 회계사 전문가 총평 및 맺음말 -->
+  <section style="margin: 2.5rem 0; line-height: 1.85;">
+    <p style="color: #334155; font-size: 1.05rem;">
+      ${closing}
+    </p>
+  </section>
+
+  <!-- 13. 1:1 맞춤 자문 안내 CTA 카드 -->
+  <section class="post-cta" style="margin: 3.5rem 0 2rem; padding: 2rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); line-height: 1.85;">
+    ${cta}
+  </section>
+
+</article>
 `;
-  }
   htmlContent = baseStyle + htmlContent;
 
   console.log('[*] Launching Real Headed Chromium with Virtual Display Xvfb...');
