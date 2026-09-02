@@ -8,11 +8,11 @@ const SPREADSHEET_ID = '1TNs8J8Y6toJ_vCYE7pRTZUUSIyHLHFGgqqWiBH916RU';
 const TARGET_TAB = process.env.TISTORY_TAB || 'Account'; // 'Account' or 'adsens'
 const SPREADSHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${TARGET_TAB}`;
 
-const TISTORY_ID = process.env.TISTORY_ID || 'skymard@hanmail.net';
-const TISTORY_PW = process.env.TISTORY_PW || 'iamwon84^^@';
+const TISTORY_ID = process.env.TISTORY_ID || '';
+const TISTORY_PW = process.env.TISTORY_PW || '';
 const TISTORY_BLOG_NAME = TARGET_TAB === 'Account' ? 'a-toms' : 'ade-sensation';
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto';
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1598288296';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 async function sendTelegram(msg) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;

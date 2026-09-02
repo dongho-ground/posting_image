@@ -1,15 +1,15 @@
-﻿import { chromium } from 'playwright';
+import { chromium } from 'playwright';
 import axios from 'axios';
 import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SPREADSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1FdAi652-z0_EZMXOrN0tNZWAcpdpN4CdVIxvWdSG8SQ/export?format=csv&gid=0';
-const NAVER_ID = process.env.NAVER_ID || 'wonrexander';
-const NAVER_PW = process.env.NAVER_PW || 'iamwon84^^!@';
+const SPREADSHEET_CSV_URL = process.env.SPREADSHEET_CSV_URL || 'https://docs.google.com/spreadsheets/d/1FdAi652-z0_EZMXOrN0tNZWAcpdpN4CdVIxvWdSG8SQ/export?format=csv&gid=0';
+const NAVER_ID = process.env.NAVER_ID || '';
+const NAVER_PW = process.env.NAVER_PW || '';
 const NAVER_COOKIES_JSON = process.env.NAVER_COOKIES || '';
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto';
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1598288296';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 async function sendTelegram(msg) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
