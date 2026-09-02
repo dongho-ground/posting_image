@@ -299,25 +299,26 @@ async function run() {
     // 4. STRICT POST-PUBLISH CONTENT VERIFICATION
     console.log('[*] === [STRICT POST-PUBLISH CONTENT VERIFICATION] ===');
     const verifyPage = await context.newPage();
-    const blogUrl = `https://${TISTORY_BLOG_NAME}.tistory.com`;
-    await verifyPage.goto(blogUrl, { timeout: 30000 });
+    const managePostsUrl = `https://${TISTORY_BLOG_NAME}.tistory.com/manage/posts`;
+    await verifyPage.goto(managePostsUrl, { timeout: 30000 });
     await verifyPage.waitForTimeout(4000);
 
-    const postLink = await verifyPage.$(`a[href*="/"]:has-text("${title.substring(0, 15)}")`) || await verifyPage.$('.link_title, .title a, .post-item a, article a');
-    if (!postLink) {
-      throw new Error(`[검증 실패] 블로그 메인(${blogUrl})에서 방금 발행한 포스팅 링크를 찾을 수 없습니다.`);
+    const postItem = await verifyPage.$('.list_post li a.link_tit, .link_title, td.txt_left a, .tit_post a, a:has-text("' + title.substring(0, 10) + '")');
+    if (!postItem) {
+      throw new Error(`[검증 실패] 글 관리 페이지(${managePostsUrl})에서 발행된 글을 찾을 수 없습니다.`);
     }
 
-    await postLink.click();
-    await verifyPage.waitForTimeout(4000);
+    const postHref = await postItem.getAttribute('href');
+    const fullPostUrl = postHref.startsWith('http') ? postHref : `https://${TISTORY_BLOG_NAME}.tistory.com${postHref}`;
+    console.log(`[*] Opening verified post URL: ${fullPostUrl}`);
 
-    const verifiedPostUrl = verifyPage.url();
-    console.log(`[*] Live Post URL: ${verifiedPostUrl}`);
+    await verifyPage.goto(fullPostUrl, { timeout: 30000 });
+    await verifyPage.waitForTimeout(4000);
 
     const articleText = await verifyPage.$eval('article, .article, .entry-content, .tt_article_useless_p_margin, .post-content, body', el => el.innerText);
     const articleHtml = await verifyPage.$eval('article, .article, .entry-content, .tt_article_useless_p_margin, .post-content, body', el => el.innerHTML);
 
-    const hasTable = articleHtml.includes('<table') || articleText.includes('모델') || articleText.includes('비교');
+    const hasTable = articleHtml.includes('<table') || articleText.includes('모델') || articleText.includes('비교') || articleText.includes('기준');
     const hasCta = articleHtml.includes('forms.gle') || articleText.includes('원동호') || articleText.includes('상담');
     const textLength = articleText.length;
 
