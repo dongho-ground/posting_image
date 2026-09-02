@@ -1,4 +1,4 @@
-﻿import { chromium } from 'playwright';
+import { chromium } from 'playwright';
 import axios from 'axios';
 import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
@@ -10,7 +10,7 @@ const SPREADSHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEE
 
 const TISTORY_ID = process.env.TISTORY_ID || 'skymard@hanmail.net';
 const TISTORY_PW = process.env.TISTORY_PW || 'iamwon84^^@';
-const TISTORY_BLOG_NAME = 'won-cpa';
+const TISTORY_BLOG_NAME = TARGET_TAB === 'Account' ? 'a-toms' : 'ade-sensation';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8858081744:AAFbsEkJeuJeo4ccgzK3J6zHlxuZu4-aLto';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1598288296';
 
