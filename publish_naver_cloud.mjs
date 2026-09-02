@@ -55,6 +55,43 @@ async function fetchSpreadsheetData() {
   return records;
 }
 
+async function recoverNaverLogin(page) {
+  if (!/nid\.naver\.com\/nidlogin\.login/i.test(page.url())) return false;
+  if (!NAVER_ID || !NAVER_PW) {
+    throw new Error('Naver cookies were rejected and NAVER_ID/NAVER_PW fallback credentials are missing');
+  }
+
+  console.log('[AUTH] Session cookies were rejected. Attempting credential fallback login...');
+  const idInput = page.locator('#id, input[name="id"]').first();
+  const pwInput = page.locator('#pw, input[name="pw"]').first();
+  if (await idInput.count() === 0 || await pwInput.count() === 0) {
+    throw new Error(`Naver login form was not found (${page.url()})`);
+  }
+
+  await idInput.fill(NAVER_ID);
+  await pwInput.fill(NAVER_PW);
+  const loginButton = page.locator('button.btn_login, #log\.login, button[type="submit"]').first();
+  if (await loginButton.count() === 0) throw new Error('Naver login submit button was not found');
+  await Promise.all([
+    page.waitForLoadState('domcontentloaded').catch(() => {}),
+    loginButton.click()
+  ]);
+  await page.waitForTimeout(5000);
+
+  if (/nid\.naver\.com/i.test(page.url())) {
+    const bodyText = await page.locator('body').innerText().catch(() => '');
+    const challenge = /보안|인증|captcha|자동입력|새로운 환경|2단계/i.test(bodyText);
+    throw new Error(challenge
+      ? `Naver security challenge blocked cloud login (${page.url()})`
+      : `Naver credential fallback login failed (${page.url()})`);
+  }
+
+  console.log('[AUTH] Credential fallback login succeeded. Returning to SmartEditor...');
+  await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`, { timeout: 30000 });
+  await page.waitForTimeout(6000);
+  return true;
+}
+
 function getTodayKSTString() {
   const now = new Date();
   const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
@@ -153,6 +190,7 @@ async function run() {
     console.log(`[*] Navigating to SmartEditor ONE for ${NAVER_ID}...`);
     await page.goto(`https://blog.naver.com/${NAVER_ID}?Redirect=Write`, { timeout: 30000 });
     await page.waitForTimeout(6000);
+    await recoverNaverLogin(page);
 
     let frame = page;
     const mainFrameEl = await page.$('#mainFrame');
