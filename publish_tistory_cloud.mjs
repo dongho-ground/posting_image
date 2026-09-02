@@ -241,9 +241,10 @@ async function run() {
     await page.goto(`https://${TISTORY_BLOG_NAME}.tistory.com/manage/newpost`, { timeout: 30000 });
     await page.waitForTimeout(6000);
 
-    // 1. Enter Title
+    // 1. Enter Title in Tistory Editor
     console.log('[1/3] Entering Title in Tistory Editor...');
-    const titleArea = await page.$('#post-title-inp, textarea[placeholder*="제목"], input[placeholder*="제목"]');
+    await page.waitForSelector('#post-title-inp, textarea.textarea_tit, textarea[placeholder*="제목"]', { timeout: 20000 });
+    const titleArea = await page.$('#post-title-inp, textarea.textarea_tit, textarea[placeholder*="제목"]');
     if (titleArea) {
       await titleArea.click();
       await titleArea.fill(title);
@@ -251,24 +252,39 @@ async function run() {
     }
 
     // 2. Inject Structured HTML Content into TinyMCE Iframe
-    console.log('[2/3] Injecting Structured HTML Content into TinyMCE...');
-    await page.waitForTimeout(2000);
-    const injectResult = await page.evaluate((html) => {
-      let success = false;
-      if (window.tinymce && window.tinymce.activeEditor) {
-        window.tinymce.activeEditor.setContent(html);
-        success = true;
-      }
-      const iframe = document.querySelector('#editor-tistory_ifr');
-      if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
-        iframe.contentDocument.body.innerHTML = html;
-        iframe.contentDocument.body.dispatchEvent(new Event('input', { bubbles: true }));
-        iframe.contentDocument.body.dispatchEvent(new Event('change', { bubbles: true }));
-        success = true;
-      }
-      return success;
-    }, htmlContent);
-    console.log(`[*] HTML Content Injection Status: ${injectResult}`);
+    console.log('[2/3] Waiting for TinyMCE Editor to initialize and injecting content...');
+    await page.waitForTimeout(3000);
+
+    // Wait until TinyMCE or iframe is ready
+    await page.waitForFunction(() => {
+      return (window.tinymce && window.tinymce.activeEditor) || !!document.querySelector('#editor-tistory_ifr')?.contentDocument?.body;
+    }, { timeout: 20000 }).catch(() => {});
+
+    let injectSuccess = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      injectSuccess = await page.evaluate((html) => {
+        if (window.tinymce && window.tinymce.activeEditor) {
+          window.tinymce.activeEditor.setContent(html);
+          return true;
+        }
+        const iframe = document.querySelector('#editor-tistory_ifr');
+        if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+          iframe.contentDocument.body.innerHTML = html;
+          iframe.contentDocument.body.dispatchEvent(new Event('input', { bubbles: true }));
+          iframe.contentDocument.body.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }
+        return false;
+      }, htmlContent);
+
+      console.log(`[*] Injection Attempt ${attempt}: ${injectSuccess}`);
+      if (injectSuccess) break;
+      await page.waitForTimeout(2000);
+    }
+
+    if (!injectSuccess) {
+      throw new Error('[발행 전 검증 실패] 티스토리 에디터에 원고 본문 주입이 실패했습니다. 발행을 중단합니다.');
+    }
     await page.waitForTimeout(2000);
 
     // 3. Click 완료 (Complete) -> 공개 (Public) -> 발행하기 (Publish)
