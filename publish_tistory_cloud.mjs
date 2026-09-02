@@ -454,32 +454,36 @@ async function run() {
     const publishBtn = await page.$('#publish-layer-btn, button:has-text("완료"), .btn_publish, button.btn-default.btn-point');
     if (publishBtn) {
       await publishBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
 
-      // Select 공개 (Public) - In Tistory: open20 is PUBLIC, open0 is PRIVATE
-      await page.evaluate(() => {
-        const publicRadio = document.querySelector('input#open20, input[value="20"]');
-        if (publicRadio) {
-          publicRadio.checked = true;
-          publicRadio.click();
-        }
-        const publicLabel = document.querySelector('label[for="open20"]') ||
-                            Array.from(document.querySelectorAll('label')).find(l => l.innerText.trim() === '공개');
-        if (publicLabel) publicLabel.click();
-      });
-      await page.waitForTimeout(1000);
+      // Select 공개 (Public)
+      const publicLabel = await page.$('label[for="open20"], label:text-is("공개")');
+      if (publicLabel) {
+        await publicLabel.click();
+        console.log('[✓] Clicked 공개 radio label');
+        await page.waitForTimeout(1000);
+      } else {
+        await page.evaluate(() => {
+          const radio = document.querySelector('input#open20');
+          if (radio) { radio.checked = true; radio.click(); }
+          const l = document.querySelector('label[for="open20"]') || Array.from(document.querySelectorAll('label')).find(el => el.innerText.trim() === '공개');
+          if (l) l.click();
+        });
+        await page.waitForTimeout(1000);
+      }
 
-      // Verify button says "공개 발행" and click
+      // Click Final Publish Button
       const finalPublishBtn = await page.$('#publish-btn, button:has-text("공개 발행"), button:has-text("발행")');
       if (finalPublishBtn) {
         await finalPublishBtn.click();
+        console.log('[✓] Clicked #publish-btn');
       } else {
         await page.evaluate(() => {
           const btn = document.querySelector('#publish-btn') || Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('발행'));
           if (btn) btn.click();
         });
       }
-      await page.waitForTimeout(8000);
+      await page.waitForTimeout(10000);
     }
 
     const proofPath = path.resolve('tistory_published_proof.png');
