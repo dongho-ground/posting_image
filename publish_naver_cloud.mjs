@@ -70,14 +70,9 @@ async function recoverNaverLogin(page) {
 
   await idInput.fill(NAVER_ID);
   await pwInput.fill(NAVER_PW);
-  const loginButton = page.locator(
-    '[id="log.login"]:visible, button.btn_login:visible, button[type="submit"]:visible, input[type="submit"]:visible'
-  ).first();
-  if (await loginButton.count() === 0) throw new Error('Naver login submit button was not found');
-  await Promise.all([
-    page.waitForLoadState('domcontentloaded').catch(() => {}),
-    loginButton.click()
-  ]);
+  // Submit from the password field so the flow does not depend on Naver's
+  // responsive login/passkey button layout in a headless browser.
+  await pwInput.press('Enter');
   await page.waitForTimeout(5000);
 
   if (/nid\.naver\.com/i.test(page.url())) {
