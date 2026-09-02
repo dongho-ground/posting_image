@@ -41,7 +41,7 @@ async function sendTelegram(msg) {
       parse_mode: 'HTML'
     });
   } catch (e) {
-    console.error('[!] Telegram alert failed:', e.message);
+    console.error('[!] Telegram alert failed:', e.response?.data || e.message);
   }
 }
 
@@ -71,7 +71,7 @@ async function recoverNaverLogin(page) {
   await idInput.fill(NAVER_ID);
   await pwInput.fill(NAVER_PW);
   const loginButton = page.locator(
-    '[id="log.login"], button.btn_login, button[type="submit"], input[type="submit"], button:has-text("로그인")'
+    '[id="log.login"]:visible, button.btn_login:visible, button[type="submit"]:visible, input[type="submit"]:visible'
   ).first();
   if (await loginButton.count() === 0) throw new Error('Naver login submit button was not found');
   await Promise.all([
