@@ -6,6 +6,7 @@ import * as path from 'path';
 
 const SPREADSHEET_ID = '1TNs8J8Y6toJ_vCYE7pRTZUUSIyHLHFGgqqWiBH916RU';
 const TARGET_TAB = process.env.TISTORY_TAB || 'Account'; // 'Account' or 'adsens'
+const TARGET_POST_ID = (process.env.TARGET_POST_ID || '').trim();
 const SPREADSHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${TARGET_TAB}`;
 
 const TISTORY_ID = process.env.TISTORY_ID || '';
@@ -55,18 +56,29 @@ async function run() {
     console.log(`[!] Failed to fetch ${TARGET_TAB} tab CSV:`, e.message);
   }
 
-  // If tab empty or fallback, use default sample data
+  // Select exactly the row chosen by n8n when provided. Direct/manual runs use
+  // the same date-aware policy so an old Ready row is never published again.
   let targetRow = null;
   if (rows && rows.length >= 2) {
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      const status = (r[7] || r[6] || '').trim();
-      if (status.toLowerCase() === 'ready') {
-        targetRow = r;
-        break;
-      }
+    const dataRows = rows.slice(1);
+    if (TARGET_POST_ID) {
+      targetRow = dataRows.find(r => (r[0] || '').trim() === TARGET_POST_ID) || null;
+    } else if (TARGET_TAB === 'Account') {
+      targetRow = dataRows.find(r =>
+        (r[7] || '').trim().toLowerCase() === 'ready' &&
+        (r[6] || '').trim() === today
+      ) || null;
+    } else {
+      // Trend content inserted at publish time wins. A prepared fallback is used
+      // only when no Ready trend row exists.
+      targetRow = dataRows.find(r => (r[7] || '').trim().toLowerCase() === 'ready') ||
+        dataRows.find(r => (r[7] || '').trim().toLowerCase() === 'fallback') || null;
     }
-    if (!targetRow) targetRow = rows[1];
+  }
+
+  if (!targetRow) {
+    console.log(`[SKIP] No publishable row for ${TARGET_TAB} on ${today}.`);
+    return;
   }
 
   const postId = targetRow ? (targetRow[0] || 'TA-2026-0902') : 'TA-2026-0902';
@@ -175,21 +187,12 @@ async function run() {
     return `https://cdn.jsdelivr.net/gh/dongho-ground/posting_image@main/images/${clean}?v=${ts}`;
   }
 
-  // Dynamic smart image detection across both Account and adsens tabs
-  let rawImg1 = '';
-  let rawImg2 = '';
-  for (let c = targetRow.length - 1; c >= 20; c--) {
-    const val = (targetRow[c] || '').trim();
-    if (val.includes('.png') || val.includes('.jpg') || val.includes('http')) {
-      if (!rawImg2) rawImg2 = val;
-      else if (!rawImg1) { rawImg1 = val; break; }
-    }
-  }
-
   const defaultImg1 = TARGET_TAB === 'Account' ? 'burnrate_runway_3d_concept.png' : 'loan_refinance_3d_concept.png';
   const defaultImg2 = TARGET_TAB === 'Account' ? 'burnrate_metrics_dashboard_3d.png' : 'loan_refinance_step_flowchart_3d.png';
-  const img1Url = resolvePublicImageUrl(rawImg1 || targetRow[31] || targetRow[29] || targetRow[27], defaultImg1);
-  const img2Url = resolvePublicImageUrl(rawImg2 || targetRow[32] || targetRow[30] || targetRow[28], defaultImg2);
+  // AF/AG are the authoritative cloud image URL columns. Filenames and prompt
+  // text must not be mistaken for public assets; blank links use safe defaults.
+  const img1Url = resolvePublicImageUrl(targetRow[31], defaultImg1);
+  const img2Url = resolvePublicImageUrl(targetRow[32], defaultImg2);
 
   // Helper: Format bold keywords with rich contextual accent color and highlighting
   function applyBoldColor(text) {
